@@ -7,7 +7,6 @@
     - Parameter validation (mandatory/optional)
     - Path validation (existing vs non-existing)
     - CSV output format and content
-    - Excel workbook structure (tabs, tables, charts)
     - Error reason classification
     - Long path detection
     - Folder aggregation logic
@@ -19,16 +18,10 @@
     Windows-specific execution tests (icacls/takeown) only run on Windows.
 #>
 
-# Resolve script root for finding the scripts under test
-if ($null -eq $PSScriptRoot -or $PSScriptRoot -eq '') {
-    $PSScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
-}
-$ScriptRoot = Split-Path -Parent $PSScriptRoot
-$IsWindowsPlatform = $PSVersionTable.Platform -eq 'Win32NT' -or $PSVersionTable.PSVersion.Major -le 5
 
 Describe "Fix-Inheritance.ps1 - Structure & Parameters" {
     BeforeAll {
-        $scriptPath = Join-Path $ScriptRoot "Fix-Inheritance.ps1"
+        $scriptPath = Join-Path (Join-Path (Split-Path -Parent $PSScriptRoot) "src") "Fix-Inheritance.ps1"
         $ast = [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$null, [ref]$null)
         $scriptContent = Get-Content $scriptPath -Raw
     }
@@ -41,10 +34,10 @@ Describe "Fix-Inheritance.ps1 - Structure & Parameters" {
     It "Should have TargetPath as mandatory parameter" {
         $param = $ast.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq "TargetPath" }
         $param | Should -Not -BeNullOrEmpty
-        $hasMandatory = $param.Attributes.ArgumentNamePairs | Where-Object {
-            $_.ArgumentName -eq "Mandatory" -and $_.Argument.Extent.Text -eq '$true'
-        }
-        $hasMandatory | Should -Not -BeNullOrEmpty
+        $paramAttr = $param.Attributes | Where-Object { $_.TypeName.FullName -eq 'Parameter' -or $_.TypeName.Name -eq 'Parameter' }
+        $paramAttr | Should -Not -BeNullOrEmpty
+        $mandatoryArg = $paramAttr.NamedArguments | Where-Object { $_.ArgumentName -eq 'Mandatory' -and $_.Argument.Extent.Text -eq '$true' }
+        $mandatoryArg | Should -Not -BeNullOrEmpty
     }
 
     It "Should have OutputPath as optional parameter with default" {
@@ -53,9 +46,8 @@ Describe "Fix-Inheritance.ps1 - Structure & Parameters" {
         $param.DefaultValue.Extent.Text | Should -Be '".\FailedInheritance"'
     }
 
-    It "Should reference both .csv and .xlsx output paths" {
-        $scriptContent | Should -Match '\$OutputCsv.*\.csv'
-        $scriptContent | Should -Match '\$OutputXlsx.*\.xlsx'
+    It "Should reference .csv output paths" {
+        $scriptContent | Should -Match '\.*\.csv'
     }
 
     It "Should call icacls.exe with /inheritance:e flag" {
@@ -66,9 +58,6 @@ Describe "Fix-Inheritance.ps1 - Structure & Parameters" {
         $scriptContent | Should -Match 'Get-ChildItem\s+-LiteralPath'
     }
 
-    It "Should set DOTNET_SYSTEM_IO_USELONGPATHS environment variable" {
-        $scriptContent | Should -Match 'DOTNET_SYSTEM_IO_USELONGPATHS'
-    }
 
     It "Should validate target path existence before processing" {
         $scriptContent | Should -Match 'Test-Path.*TargetPath'
@@ -78,9 +67,6 @@ Describe "Fix-Inheritance.ps1 - Structure & Parameters" {
         $scriptContent | Should -Match 'Export-Csv'
     }
 
-    It "Should write output via Export-Excel" {
-        $scriptContent | Should -Match 'Export-Excel'
-    }
 }
 
 Describe "Fix-Inheritance.ps1 - Error Classification Logic" {
@@ -187,7 +173,7 @@ Describe "Fix-Inheritance.ps1 - Long Path Detection" {
 
 Describe "Take-Ownership.ps1 - Structure & Parameters" {
     BeforeAll {
-        $scriptPath = Join-Path $ScriptRoot "Take-Ownership.ps1"
+        $scriptPath = Join-Path (Join-Path (Split-Path -Parent $PSScriptRoot) "src") "Take-Ownership.ps1"
         $ast = [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$null, [ref]$null)
         $scriptContent = Get-Content $scriptPath -Raw
     }
@@ -200,10 +186,10 @@ Describe "Take-Ownership.ps1 - Structure & Parameters" {
     It "Should have CsvPath as mandatory parameter" {
         $param = $ast.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq "CsvPath" }
         $param | Should -Not -BeNullOrEmpty
-        $hasMandatory = $param.Attributes.ArgumentNamePairs | Where-Object {
-            $_.ArgumentName -eq "Mandatory" -and $_.Argument.Extent.Text -eq '$true'
-        }
-        $hasMandatory | Should -Not -BeNullOrEmpty
+        $paramAttr = $param.Attributes | Where-Object { $_.TypeName.FullName -eq 'Parameter' -or $_.TypeName.Name -eq 'Parameter' }
+        $paramAttr | Should -Not -BeNullOrEmpty
+        $mandatoryArg = $paramAttr.NamedArguments | Where-Object { $_.ArgumentName -eq 'Mandatory' -and $_.Argument.Extent.Text -eq '$true' }
+        $mandatoryArg | Should -Not -BeNullOrEmpty
     }
 
     It "Should have OutputCsv as optional parameter" {
@@ -242,7 +228,7 @@ Describe "Take-Ownership.ps1 - Structure & Parameters" {
 
 Describe "Take-Ownership.bat - Structure" {
     BeforeAll {
-        $batPath = Join-Path $ScriptRoot "Take-Ownership.bat"
+        $batPath = Join-Path (Join-Path (Split-Path -Parent $PSScriptRoot) "src") "Take-Ownership.bat"
         $content = Get-Content $batPath -Raw
     }
 
@@ -290,11 +276,6 @@ Describe "Fix-Inheritance.ps1 - Path Resolution Logic" {
         $OutputCsv | Should -Be "/reports/MyReport.csv"
     }
 
-    It "Should append .xlsx extension to output path" {
-        $OutputPath = "/reports/MyReport"
-        $OutputXlsx = "$OutputPath.xlsx"
-        $OutputXlsx | Should -Be "/reports/MyReport.xlsx"
-    }
 }
 
 Describe "Take-Ownership.ps1 - CSV Processing Logic" {

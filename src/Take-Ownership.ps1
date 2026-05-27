@@ -26,11 +26,13 @@ param(
     [string]$OutputCsv = ""
 )
 
+# Validate CSV exists
 if (-not (Test-Path -Path $CsvPath)) {
     Write-Error "CSV file not found: $CsvPath"
     exit 1
 }
 
+# Default output path next to input CSV
 if ([string]::IsNullOrEmpty($OutputCsv)) {
     $csvDir  = [System.IO.Path]::GetDirectoryName($CsvPath)
     $csvBase = [System.IO.Path]::GetFileNameWithoutExtension($CsvPath)
@@ -38,6 +40,7 @@ if ([string]::IsNullOrEmpty($OutputCsv)) {
 }
 $OutputCsv = [System.IO.Path]::GetFullPath($OutputCsv)
 
+# Admin check
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
     [Security.Principal.WindowsBuiltInRole]::Administrator
 )
@@ -65,36 +68,29 @@ foreach ($file in $failedFiles) {
     $processedCount++
     $filePath = $file.FilePath
 
-    Write-Host "[$processedCount/$totalCount] $filePath"
+    if ($processedCount % 100 -eq 0 -or $processedCount -eq 1) {
+        Write-Host "[$processedCount/$totalCount] Processing..."
+    }
 
-    $takeownPath = $filePath
     $status = "Unknown"
     $statusDetail = ""
 
     # Step 1: Take ownership
-    $takeownExit = 0
-    $takeownOut = & takeown.exe /f "`"$takeownPath`" /A 2>&1
-    $takeownExit = $LASTEXITCODE
-
-    if ($takeownExit -ne 0) {
-        Write-Host "  -> FAILED (takeown exit $takeownExit)" -ForegroundColor Red
+    $takeownOut = & takeown.exe /f $filePath /A 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  -> FAILED (takeown exit $LASTEXITCODE)" -ForegroundColor Red
         $stillFailedCount++
         $status = "Failed"
-        $statusDetail = "Takeown failed (exit $takeownExit)"
-    }
-    else {
+        $statusDetail = "Takeown failed (exit $LASTEXITCODE)"
+    } else {
         # Step 2: Re-apply inheritance
-        $icaclsExit = 0
-        $icaclsOut = & icacls.exe "`"$takeownPath`" /inheritance:e /C 2>&1
-        $icaclsExit = $LASTEXITCODE
-
-        if ($icaclsExit -eq 0) {
+        $icaclsOut = & icacls.exe $filePath /inheritance:e /C 2>&1
+        if ($LASTEXITCODE -eq 0) {
             Write-Host "  -> FIXED" -ForegroundColor Green
             $succeededCount++
             $status = "Fixed"
-        }
-        else {
-            Write-Host "  -> FAILED (icacls exit $icaclsExit)" -ForegroundColor Red
+        } else {
+            Write-Host "  -> FAILED (icacls exit $LASTEXITCODE)" -ForegroundColor Red
             $stillFailedCount++
             $status = "Failed"
             $statusDetail = "Inheritance restore failed after ownership"
@@ -112,8 +108,10 @@ foreach ($file in $failedFiles) {
     })
 }
 
+# Write results
 $results | Export-Csv -Path $OutputCsv -NoTypeInformation -Encoding UTF8 -Force
 
+# Summary
 Write-Host ""
 Write-Host "=========================================="
 Write-Host "Total processed:   $processedCount"

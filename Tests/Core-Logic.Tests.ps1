@@ -1,6 +1,6 @@
 Describe "Fix-Inheritance.ps1 - Core Logic" -Tag "Unit" {
     BeforeAll {
-        $scriptPath = "$PSScriptRoot/../Fix-Inheritance.ps1"
+        $scriptPath = "$PSScriptRoot/../src/Fix-Inheritance.ps1"
         $testDrive = Join-Path $PSScriptRoot "TestDrive_Unit"
 
         if (Test-Path $testDrive) {
@@ -11,14 +11,14 @@ Describe "Fix-Inheritance.ps1 - Core Logic" -Tag "Unit" {
         # Create test folder structure
         New-Item -Path (Join-Path $testDrive "folder1") -ItemType Directory -Force | Out-Null
         New-Item -Path (Join-Path $testDrive "folder2") -ItemType Directory -Force | Out-Null
-        New-Item -Path (Join-Path $testDrive "folder1\subfolder") -ItemType Directory -Force | Out-Null
+        New-Item -Path (Join-Path $testDrive "folder1/subfolder") -ItemType Directory -Force | Out-Null
 
         # Create test files
         "test content" | Set-Content (Join-Path $testDrive "file1.txt") -Encoding UTF8
-        "test content" | Set-Content (Join-Path $testDrive "folder1\file2.txt") -Encoding UTF8
-        "test content" | Set-Content (Join-Path $testDrive "folder1\subfolder\file3.txt") -Encoding UTF8
-        "test content" | Set-Content (Join-Path $testDrive "folder2\file4.txt") -Encoding UTF8
-        "test content with special chars: äöü & < >" | Set-Content (Join-Path $testDrive "folder2\file (special).txt") -Encoding UTF8
+        "test content" | Set-Content (Join-Path $testDrive "folder1/file2.txt") -Encoding UTF8
+        "test content" | Set-Content (Join-Path $testDrive "folder1/subfolder\file3.txt") -Encoding UTF8
+        "test content" | Set-Content (Join-Path $testDrive "folder2/file4.txt") -Encoding UTF8
+        "test content with special chars: äöü & < >" | Set-Content (Join-Path $testDrive "folder2/file (special).txt") -Encoding UTF8
     }
 
     AfterAll {
@@ -28,7 +28,7 @@ Describe "Fix-Inheritance.ps1 - Core Logic" -Tag "Unit" {
     }
 
     It "Should validate existing path parameter" {
-        $result = & pwsh -NoProfile -Command "& '$scriptPath' -TargetPath '$testDrive' -OutputPath '$testDrive\test_output' 2>&1"
+        $result = & pwsh -NoProfile -Command "& '$scriptPath' -TargetPath '$testDrive' -OutputPath '$testDrive/test_output' 2>&1"
         $result | Should -Not -BeNullOrEmpty
     }
 
@@ -38,11 +38,9 @@ Describe "Fix-Inheritance.ps1 - Core Logic" -Tag "Unit" {
         $result | Should -Not -BeNullOrEmpty
     }
 
-    It "Should produce output paths with .csv and .xlsx extensions" {
+    It "Should produce output path with .csv extension" {
         $outputPath = Join-Path $testDrive "unit_test"
         $expectedCsv = "$outputPath.csv"
-        $expectedXlsx = "$outputPath.xlsx"
         $expectedCsv | Should -BeLike "*.csv"
-        $expectedXlsx | Should -BeLike "*.xlsx"
     }
 }

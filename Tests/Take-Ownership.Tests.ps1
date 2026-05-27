@@ -1,53 +1,76 @@
-Describe "Take-Ownership.ps1 - Parameter Validation" {
-    It "Should have CsvPath as mandatory parameter" {
-        $scriptPath = "$PSScriptRoot/../Take-Ownership.ps1"
-        $ast = [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$null, [ref]$null)
-        $param = $ast.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq "CsvPath" }
-        $param | Should -Not -BeNullOrEmpty
-        $param.Attributes.ArgumentNamePairs | Where-Object { $_.ArgumentName -eq "Mandatory" } | Should -Not -BeNullOrEmpty
+BeforeAll {
+    function Get-ScriptInfo {
+        param([string]$ScriptPath)
+        $errors = @()
+        $tokens = @()
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            $ScriptPath, [ref]$tokens, [ref]$errors
+        )
+        return @{ Ast = $ast; Errors = $errors; Content = Get-Content -Path $ScriptPath -Raw }
     }
+}
 
-    It "Should have OutputCsv as optional parameter" {
-        $scriptPath = "$PSScriptRoot/../Take-Ownership.ps1"
-        $ast = [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$null, [ref]$null)
-        $param = $ast.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq "OutputCsv" }
-        $param | Should -Not -BeNullOrEmpty
+Describe "Take-Ownership.ps1" {
+    BeforeAll {
+        $info = Get-ScriptInfo "$PSScriptRoot/../src/Take-Ownership.ps1"
+        $script:ast     = $info.Ast
+        $script:errors  = $info.Errors
+        $script:content = $info.Content
     }
 
     It "Should have no syntax errors" {
-        $scriptPath = "$PSScriptRoot/../Take-Ownership.ps1"
-        $errors = @()
-        $tokens = @()
-        [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$tokens, [ref]$errors)
-        $errors.Count | Should -Be 0
+        $script:errors.Count | Should -Be 0
+    }
+
+    It "Should have <Name> parameter with Mandatory=<Mandatory>" -TestCases @(
+        @{ Name = "CsvPath";   Mandatory = $true  }
+        @{ Name = "OutputCsv"; Mandatory = $false }
+    ) {
+        $param = $script:ast.ParamBlock.Parameters |
+            Where-Object { $_.Name.VariablePath.UserPath -eq $Name }
+        $param | Should -Not -BeNullOrEmpty
+
+        $mandatoryAttr = $param.Attributes.ArgumentNamePairs |
+            Where-Object { $_.ArgumentName -eq "Mandatory" }
+
+        if ($Mandatory) {
+            $mandatoryAttr | Should -Not -BeNullOrEmpty
+            $mandatoryAttr.Argument.Extent.Text | Should -Be '$true'
+        } else {
+            if ($mandatoryAttr) {
+                $mandatoryAttr.Argument.Extent.Text | Should -Be '$false'
+            }
+        }
     }
 
     It "Should exit with error when CSV file does not exist" {
-        $scriptPath = "$PSScriptRoot/../Take-Ownership.ps1"
-        & pwsh -NoProfile -Command "& '$scriptPath' -CsvPath 'Z:\NonExistent\file.csv' 2>&1"
+        & pwsh -NoProfile -Command "
+            & '$PSScriptRoot/../src/Take-Ownership.ps1' -CsvPath 'Z:\NonExistent\file.csv' 2>&1
+            exit `$LASTEXITCODE
+        "
         $LASTEXITCODE | Should -Not -Be 0
     }
 }
 
-Describe "Take-Ownership.bat - Basic Validation" {
+Describe "Take-Ownership.bat" {
+    BeforeAll {
+        $script:batPath = "$PSScriptRoot/../src/Take-Ownership.bat"
+    }
+
     It "Should exist and be non-empty" {
-        $batPath = "$PSScriptRoot/../Take-Ownership.bat"
-        $batPath | Should -Exist
-        (Get-Item $batPath).Length | Should -BeGreaterThan 0
+        $script:batPath | Should -Exist
+        (Get-Item $script:batPath).Length | Should -BeGreaterThan 0
     }
 
     It "Should contain takeown command" {
-        $batPath = "$PSScriptRoot/../Take-Ownership.bat"
-        Get-Content $batPath | Should -Match 'takeown'
+        Get-Content $script:batPath | Should -Match 'takeown'
     }
 
     It "Should contain icacls command" {
-        $batPath = "$PSScriptRoot/../Take-Ownership.bat"
-        Get-Content $batPath | Should -Match 'icacls'
+        Get-Content $script:batPath | Should -Match 'icacls'
     }
 
     It "Should contain enabledelayedexpansion" {
-        $batPath = "$PSScriptRoot/../Take-Ownership.bat"
-        Get-Content $batPath | Should -Match 'setlocal enabledelayedexpansion'
+        Get-Content $script:batPath | Should -Match 'setlocal enabledelayedexpansion'
     }
 }
