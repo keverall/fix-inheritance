@@ -1,0 +1,21 @@
+# Editor / tool config
+.vscode/
+.kilo/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Script output
+*.csv
+*.xlsx
+*.log
+
+# Test artifacts
+TestDrive_*/
+TestDrive_Unit/
+workflow_test/
+
+# platyPS artifacts (if regenerated locally)
+Help/
+*.help.xml
