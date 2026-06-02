@@ -20,14 +20,6 @@
         $script:MaxPathLength, $script:LongPathPrefix
 #>
 
-if ($PSVersionTable.PSVersion.Major -lt 7) {
-    $pwsh51Common = Join-Path $PSScriptRoot "pwsh51" "_Common.ps1"
-    if (Test-Path $pwsh51Common) {
-        . $pwsh51Common
-        return
-    }
-}
-
 #region Constants
 # Windows MAX_PATH is 260; the \\?\ prefix lets APIs handle longer paths.
 $script:MaxPathLength = 260

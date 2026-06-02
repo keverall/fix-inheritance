@@ -18,6 +18,7 @@ These scripts solve common Windows file permission inheritance problems by:
 | `src/Fix-Inheritance.ps1` | Scans target path, attempts to enable inheritance, logs all failures to CSV |
 | `src/Take-Ownership.ps1` | Takes ownership of failed files from CSV, re-applies inheritance, logs results |
 | `src/_Common.ps1` | Shared helper module (dot-sourced by both main scripts) |
+| `src/pwsh51/` | PowerShell 5.1-specific implementations (auto-selected when running on PS 5.1) |
 
 ## Quick Start
 
@@ -29,24 +30,24 @@ These scripts solve common Windows file permission inheritance problems by:
 
 Produces:
 
-- `FailedInheritance.csv` — list of all files where inheritance could not be enabled
-- `FailedInheritance.log` — detailed execution log (same base name as CSV)
+- `output/FailedInheritance.csv` — list of all files where inheritance could not be enabled
+- `output/FailedInheritance.log` — detailed execution log (same base name as CSV)
 
-Custom output path:
+Custom output path (`.csv` extension is appended automatically if omitted, and `.log` defaults next to it):
 
 ```powershell
 .\src\Fix-Inheritance.ps1 -TargetPath "R:\r_vs13_d2\ftcregfin" -OutputPath "C:\reports\failures"
 ```
 
-Produces `failures.csv` and `failures.log`.
+Produces `C:\reports\failures.csv` and `C:\reports\failures.log`.
 
 ### Step 2: Take ownership of failed files (run as Administrator)
 
 ```powershell
-.\src\Take-Ownership.ps1 -CsvPath "FailedInheritance.csv"
+.\src\Take-Ownership.ps1 -CsvPath "./output/FailedInheritance.csv"
 ```
 
-Produces a results CSV (`Results_TIMESTAMP.csv` by default) and matching log file.
+Produces `Results_TIMESTAMP.csv` next to the input CSV and a log file.
 
 ### Step 3: Re-run if needed
 
@@ -136,36 +137,39 @@ Automatically detects and handles paths > 260 characters:
 
 ### Logging
 
-Each run creates a timestamped log file:
+Each run creates a log file:
 - Format: `[YYYY-MM-DD HH:MM:SS] [LEVEL] Message`
 - Levels: INFO, WARNING, ERROR
 - Records: start/end times, file counts, errors, configuration
-- Located next to CSV file with same base name
+- Fix-Inheritance: log is placed next to the output CSV with `.log` extension (same base name)
+- Take-Ownership: log defaults to `./logs/TakeOwnership.log` unless `-LogPath` is specified
 
 ### Safety Features
 
 - Uses `ProcessStartInfo.ArgumentList` on PowerShell 7+ (with a manually-quoted `Arguments` string fallback on Windows PowerShell 5.1, where the property does not exist) for native command execution (avoids PowerShell parsing issues)
-- `[CmdletBinding(SupportsShouldProcess)]` on state-changing functions
-- `-WhatIf` and `-Confirm` support where appropriate
 - Continue-on-error design: never stops processing due to individual file failures
 - Admin privilege detection with helpful warnings (non-fatal on non-Windows platforms)
+- Enumeration errors captured via `-ErrorVariable` so inaccessible folders don't halt processing
 
 ## Requirements
 
-- Windows PowerShell 5.1 or PowerShell 7+
+- **Windows PowerShell 5.1 or PowerShell 7+**
 - Administrator privileges (required for Take-Ownership to work on protected files)
 - Read access to target fileshare
 - `icacls.exe` and `takeown.exe` (built into Windows operating system)
 - For cross-platform testing: Scripts run on Linux/PowerShell 7 but will skip Windows-specific operations gracefully
 
+### PowerShell 5.1 Support
+
+The scripts support both Windows PowerShell 5.1 and PowerShell 7+. When run on PowerShell 5.1, the scripts automatically route to version-specific implementations in `src/pwsh51/` that avoid PS 7+ language features.
+
 ## Test Suite
 
-Comprehensive Pester test suite validates all three scripts end-to-end:
+Comprehensive Pester test suite validates the scripts end-to-end:
 
-- **55 tests total** across `_Common.Tests.ps1`, `Fix-Inheritance.Tests.ps1`, and `Take-Ownership.Tests.ps1`
-- Pure functions (helpers), integration paths, and script structure
-- Special characters, deep paths, long paths, continue-on-error scenarios
-- PSScriptAnalyzer clean (0 warnings excluding PSAvoidUsingWriteHost)
+- **34 tests** across `Fix-Inheritance.Tests.ps1` and `Take-Ownership.Tests.ps1`
+- Integration tests, special characters, deep paths, long paths, enumeration-error handling, and default-path resolution
+- Continue-on-error design verified across all scenarios
 
 Run tests with:
 

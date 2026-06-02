@@ -8,6 +8,10 @@
 BeforeAll {
     $commonPath     = "$PSScriptRoot/../src/_Common.ps1"
     $scriptPath     = "$PSScriptRoot/../src/Take-Ownership.ps1"
+    if ($PSVersionTable.PSVersion.Major -lt 7) {
+        $commonPath     = "$PSScriptRoot/../src/pwsh51/_Common.ps1"
+        $scriptPath     = "$PSScriptRoot/../src/pwsh51/Take-Ownership.ps1"
+    }
 
     . $commonPath
 
@@ -38,7 +42,9 @@ Describe "Take-Ownership.ps1" {
     }
 
     It "Should exit with error when CSV file does not exist" {
-        & pwsh -NoProfile -Command "& '$scriptPath' -CsvPath 'Z:\NonExistent\file.csv' 2>&1"
+        $tmpOut = [System.IO.Path]::GetTempFileName(); $tmpLog = [System.IO.Path]::GetTempFileName()
+        & pwsh -NoProfile -Command "& '$scriptPath' -CsvPath 'Z:\NonExistent\file.csv' -OutputCsv '$tmpOut' -LogPath '$tmpLog' 2>'$null'"
+        Remove-Item $tmpOut, $tmpLog -Force -ErrorAction SilentlyContinue
         $LASTEXITCODE | Should -Not -Be 0
     }
 }

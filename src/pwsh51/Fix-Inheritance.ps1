@@ -43,19 +43,6 @@ param(
     [string]$LogPath = $null
 )
 
-if ($PSVersionTable.PSVersion.Major -lt 7) {
-    $pwsh51Script = Join-Path $PSScriptRoot "pwsh51" "Fix-Inheritance.ps1"
-    if (Test-Path $pwsh51Script) {
-        if ($MyInvocation.InvocationName -eq '.') {
-            . $pwsh51Script @PSBoundParameters
-        } else {
-            & $pwsh51Script @PSBoundParameters
-            exit $LASTEXITCODE
-        }
-        return
-    }
-}
-
 . (Join-Path $PSScriptRoot '_Common.ps1')
 
 function Invoke-FixInheritance {

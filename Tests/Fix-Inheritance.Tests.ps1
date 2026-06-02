@@ -3,6 +3,10 @@
 BeforeAll {
     $commonPath     = "$PSScriptRoot/../src/_Common.ps1"
     $scriptPath     = "$PSScriptRoot/../src/Fix-Inheritance.ps1"
+    if ($PSVersionTable.PSVersion.Major -lt 7) {
+        $commonPath     = "$PSScriptRoot/../src/pwsh51/_Common.ps1"
+        $scriptPath     = "$PSScriptRoot/../src/pwsh51/Fix-Inheritance.ps1"
+    }
     . $commonPath
 
     $ast = [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$null, [ref]$null)
@@ -26,7 +30,9 @@ Describe "Fix-Inheritance.ps1" {
         $param | Should -Not -BeNullOrEmpty
     }
     It "Exits non-zero on missing target" {
-        & pwsh -NoProfile -Command "& '$scriptPath' -TargetPath 'Z:\NonExistent\Path' 2>&1"
+        $tmpOut = [System.IO.Path]::GetTempFileName(); $tmpLog = [System.IO.Path]::GetTempFileName()
+        & pwsh -NoProfile -Command "& '$scriptPath' -TargetPath 'Z:\NonExistent\Path' -OutputPath '$tmpOut' -LogPath '$tmpLog' 2>'$null'"
+        Remove-Item $tmpOut, $tmpLog -Force -ErrorAction SilentlyContinue
         $LASTEXITCODE | Should -Not -Be 0
     }
 }
