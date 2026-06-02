@@ -11,9 +11,10 @@
       * NEVER stops on a single file failure - the per-item loop
         continues on every error and records it.
       * All special characters in filenames are passed to takeown /
-        icacls verbatim via ProcessStartInfo.ArgumentList (no
-        command-line string re-parsing that could mishandle
-        & ^ | " etc.).
+        icacls verbatim. On PowerShell 7+ this uses
+        ProcessStartInfo.ArgumentList; on Windows PowerShell 5.1 it
+        falls back to a manually-quoted Arguments string (see
+        Invoke-NativeCommand for the rationale).
       * Paths longer than Windows MAX_PATH (260) are passed with the
         \\?\ long-path prefix.
       * Exit code (HRESULT) is the primary signal for classification.

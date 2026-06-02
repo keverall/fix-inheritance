@@ -144,7 +144,7 @@ Each run creates a timestamped log file:
 
 ### Safety Features
 
-- Uses `ProcessStartInfo.ArgumentList` for native command execution (avoids PowerShell parsing issues)
+- Uses `ProcessStartInfo.ArgumentList` on PowerShell 7+ (with a manually-quoted `Arguments` string fallback on Windows PowerShell 5.1, where the property does not exist) for native command execution (avoids PowerShell parsing issues)
 - `[CmdletBinding(SupportsShouldProcess)]` on state-changing functions
 - `-WhatIf` and `-Confirm` support where appropriate
 - Continue-on-error design: never stops processing due to individual file failures

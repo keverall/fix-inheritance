@@ -11,9 +11,10 @@
         on every error and records it.
       * Files that fail to enumerate (access denied, lock, bad path) are
         captured via -ErrorVariable and recorded in the failure CSV.
-      * All special characters in filenames are passed to icacls verbatim
-        via ProcessStartInfo.ArgumentList (no command-line string
-        re-parsing that could mishandle & ^ | " etc.).
+      * All special characters in filenames are passed to icacls verbatim.
+        On PowerShell 7+ this uses ProcessStartInfo.ArgumentList; on
+        Windows PowerShell 5.1 it falls back to a manually-quoted
+        Arguments string (see Invoke-NativeCommand for the rationale).
       * Paths longer than Windows MAX_PATH (260) are passed with the
         \\?\ long-path prefix that icacls requires.
       * Export-Csv handles CSV escaping of commas, quotes, and newlines

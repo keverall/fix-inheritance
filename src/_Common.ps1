@@ -171,11 +171,22 @@ function Write-Section {
     Write-Status $line
 }
 
-# Invokes a native command (icacls.exe or takeown.exe) via
-# ProcessStartInfo.ArgumentList so every argument is passed verbatim
-# to the OS - no command-line string re-parsing. This is the only
-# reliable way to handle paths containing shell metacharacters
-# (& ^ | " etc.) on Windows PowerShell 5.1.
+# Invokes a native command (icacls.exe or takeown.exe) so that
+# every argument is passed verbatim to the OS, with no PowerShell
+# or cmd pre-parsing that could mishandle metacharacters in paths.
+#
+# On PowerShell 7+ (.NET Core 2.1+ / .NET 5+) we use
+# ProcessStartInfo.ArgumentList, which preserves arguments exactly
+# as supplied - the only fully reliable way to handle paths
+# containing & ^ | " etc.
+#
+# On Windows PowerShell 5.1 (.NET Framework 4.x) the ArgumentList
+# property does not exist. We fall back to ProcessStartInfo.Arguments
+# and quote any argument containing whitespace or a double quote
+# ourselves before CreateProcess re-parses the string. The common
+# NTFS filename metacharacters (& ^ | < > !) are NOT cmd special
+# characters, so CreateProcess passes them through unchanged; only
+# whitespace and " need quoting.
 function Invoke-NativeCommand {
     param(
         [Parameter(Mandatory = $true)][string]$FileName,
@@ -187,12 +198,19 @@ function Invoke-NativeCommand {
         $psi.FileName = $FileName
         $psi.UseShellExecute = $false
         $psi.RedirectStandardOutput = $true
-        $psi.RedirectStandardError = $true
+        $psi.RedirectStandardError  = $true
         $psi.StandardOutputEncoding = [System.Text.Encoding]::Unicode
         $psi.StandardErrorEncoding  = [System.Text.Encoding]::Unicode
-        foreach ($a in $Arguments) {
-            [void]$psi.ArgumentList.Add($a)
+
+        $hasArgList = $null -ne ([System.Diagnostics.ProcessStartInfo].GetProperty('ArgumentList'))
+        if ($hasArgList) {
+            foreach ($a in $Arguments) { [void]$psi.ArgumentList.Add($a) }
+        } else {
+            $psi.Arguments = ($Arguments | ForEach-Object {
+                if ($_ -match '[\s"]') { '"' + ($_ -replace '"','\"') + '"' } else { $_ }
+            }) -join ' '
         }
+
         $proc = [System.Diagnostics.Process]::Start($psi)
         $outTask = $proc.StandardOutput.ReadToEndAsync()
         $errTask = $proc.StandardError.ReadToEndAsync()
