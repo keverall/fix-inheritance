@@ -205,13 +205,6 @@ function Invoke-FixInheritance {
 # for testing (in which case the test invokes Invoke-FixInheritance with
 # its own parameters).
 if ($MyInvocation.InvocationName -ne '.') {
-    try {
-        if ($IsWindows) {
-            Get-ChildItem -Path (Join-Path $PSScriptRoot '*.ps1') -File -ErrorAction SilentlyContinue |
-                Unblock-File -ErrorAction SilentlyContinue
-        }
-    } catch { }
-
     $scriptErrors = $null
     $countMismatch = Invoke-FixInheritance @PSBoundParameters -ErrorVariable scriptErrors
     if ($scriptErrors) { exit 1 }
