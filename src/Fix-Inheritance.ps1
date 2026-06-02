@@ -73,6 +73,9 @@ function Invoke-FixInheritance {
     if (-not (Test-Path -LiteralPath $TargetPath)) {
         Write-Status "Target path does not exist: $TargetPath" -Level 'ERROR'
         Write-Error "Target path does not exist: $TargetPath"
+        # Always emit a CSV (header-only) so downstream tooling
+        # (Take-Ownership.ps1) can rely on its presence.
+        Write-FailureCsv -FailedItems @() -OutputCsv $OutputCsv
         return
     }
     if (Test-Path -LiteralPath $OutputCsv -PathType Leaf) {
@@ -156,15 +159,7 @@ function Invoke-FixInheritance {
     }
 
     # --- Export CSV ---
-    # Export-Csv on an empty collection produces an empty file, so we
-    # write the header explicitly when the list is empty.
-    if ($failedItems.Count -gt 0) {
-        $failedItems | Select-Object FilePath, FileName, ParentFolder, FolderName, ErrorReason, PathLength, IsLongPath, Timestamp |
-            Export-Csv -Path $OutputCsv -NoTypeInformation -Encoding UTF8 -Force
-    } else {
-        '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"' |
-            Set-Content -Path $OutputCsv -Encoding UTF8 -Force
-    }
+    Write-FailureCsv -FailedItems $failedItems -OutputCsv $OutputCsv
 
     # --- Summary ---
     $enumErrorCount = @($enumErrors).Count
@@ -210,6 +205,13 @@ function Invoke-FixInheritance {
 # for testing (in which case the test invokes Invoke-FixInheritance with
 # its own parameters).
 if ($MyInvocation.InvocationName -ne '.') {
+    try {
+        if ($IsWindows) {
+            Get-ChildItem -Path (Join-Path $PSScriptRoot '*.ps1') -File -ErrorAction SilentlyContinue |
+                Unblock-File -ErrorAction SilentlyContinue
+        }
+    } catch { }
+
     $scriptErrors = $null
     $countMismatch = Invoke-FixInheritance @PSBoundParameters -ErrorVariable scriptErrors
     if ($scriptErrors) { exit 1 }

@@ -238,4 +238,22 @@ function New-DirectoryIfMissing {
         }
     }
 }
+
+# Writes the failure list to a CSV. When the list is empty, Export-Csv
+# would produce an empty file, so we write the header row explicitly
+# to guarantee downstream tooling (Take-Ownership.ps1) always finds a
+# well-formed CSV with the expected columns.
+function Write-FailureCsv {
+    param(
+        [object[]]$FailedItems,
+        [Parameter(Mandatory = $true)][string]$OutputCsv
+    )
+    if ($FailedItems -and $FailedItems.Count -gt 0) {
+        $FailedItems | Select-Object FilePath, FileName, ParentFolder, FolderName, ErrorReason, PathLength, IsLongPath, Timestamp |
+            Export-Csv -Path $OutputCsv -NoTypeInformation -Encoding UTF8 -Force
+    } else {
+        '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"' |
+            Set-Content -Path $OutputCsv -Encoding UTF8 -Force
+    }
+}
 #endregion

@@ -160,6 +160,16 @@ Describe "Fix-Inheritance integration tests" {
         { Invoke-FixInheritance -TargetPath 'X:\nonexistent' -OutputPath $csv -LogPath $log } | Should -Not -Throw
     }
 
+    It "Writes a header-only CSV when target does not exist" {
+        $csv = Join-Path $script:root 'out.csv'
+        $log = Join-Path $script:root 'out.log'
+        Invoke-FixInheritance -TargetPath 'X:\nonexistent' -OutputPath $csv -LogPath $log
+        Test-Path $csv | Should -Be $true
+        $header = Get-Content $csv -TotalCount 1
+        $header | Should -Be '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"'
+        (Get-Content $csv).Count | Should -Be 1
+    }
+
     It "Processes all items and records 100% failures when icacls is unavailable" {
         New-Item -ItemType File -Path (Join-Path $script:root 'a.txt') -Force | Out-Null
         New-Item -ItemType File -Path (Join-Path $script:root 'b.txt') -Force | Out-Null
