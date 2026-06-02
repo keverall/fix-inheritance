@@ -14,11 +14,8 @@
 .PARAMETER OutputPath
     Path for the output CSV file. Default: .\FailedInheritance.csv
 
-.EXAMPLE
-    .\Fix-Inheritance.ps1 -TargetPath "R:\r_vs13_d2\ftcregfin"
-
-.EXAMPLE
-    .\Fix-Inheritance.ps1 -TargetPath "R:\r_vs13_d2\ftcregfin" -OutputPath "C:\reports\failures"
+.Parameter LogPath
+    Optional path for the log file. Default: same as OutputPath with .log extension
 #>
 
 [CmdletBinding()]
@@ -27,23 +24,61 @@ param(
     [string]$TargetPath,
 
     [Parameter(Mandatory = $false, Position = 1)]
-    [string]$OutputPath = ".\FailedInheritance"
+    [string]$OutputPath = ".\FailedInheritance",
+
+    [Parameter(Mandatory = $false, Position = 2)]
+    [string]$LogPath = ""
 )
 
+# Resolve paths
+$OutputCsv = [System.IO.Path]::GetFullPath("$OutputPath.csv")
+if ([string]::IsNullOrWhiteSpace($LogPath)) {
+    $LogPath = [System.IO.Path]::GetFullPath("$OutputPath.log")
+} else {
+    $LogPath = [System.IO.Path]::GetFullPath($LogPath)
+}
+
+# Ensure output directory exists
+$outputDir = [System.IO.Path]::GetDirectoryName($OutputCsv)
+if (-not (Test-Path -LiteralPath $outputDir)) {
+    New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+}
+$logDir = [System.IO.Path]::GetDirectoryName($LogPath)
+if (-not (Test-Path -LiteralPath $logDir)) {
+    New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+}
+
+function Write-Log {
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string]$Message,
+        
+        [Parameter(Mandatory = $false)]
+        [string]$Level = "INFO"
+    )
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logEntry = "[$timestamp] [$Level] $Message"
+    try {
+        Add-Content -Path $script:LogPath -Value $logEntry -Encoding UTF8 -ErrorAction SilentlyContinue
+    } catch { }
+}
+
 # Validate target path exists
-if (-not (Test-Path -Path $TargetPath)) {
+if (-not (Test-Path -LiteralPath $TargetPath)) {
+    Write-Log "Target path does not exist: $TargetPath" -Level "ERROR"
     Write-Error "Target path does not exist: $TargetPath"
     exit 1
 }
 
-# Resolve output path
-$OutputCsv = [System.IO.Path]::GetFullPath("$OutputPath.csv")
+if (Test-Path -LiteralPath $OutputCsv -PathType Leaf) {
+    Write-Log "Output file already exists and will be overwritten: $OutputCsv" -Level "WARNING"
+}
 
-Write-Host "Starting inheritance fix on: $TargetPath"
-Write-Host "Output CSV:   $OutputCsv"
+Write-Log "Starting inheritance fix on: $TargetPath"
+Write-Log "Output CSV:   $OutputCsv"
+Write-Log "Log file:     $LogPath"
 Write-Host ""
-
-# Helper: classify icacls error output
+try { Add-Content -Path $LogPath -Value "" -Encoding UTF8 -ErrorAction SilentlyContinue } catch {}
 function Get-ErrorReason {
     param(
         [int]$ExitCode,
@@ -52,7 +87,7 @@ function Get-ErrorReason {
     if ($ErrorOutput -match "Access is denied") {
         return "Access Denied - requires ownership change"
     }
-    if ($ErrorOutput -match "not found") {
+    if ($ErrorOutput -match "path not found") {
         return "File not found"
     }
     if ($ErrorOutput -match "is in use") {
@@ -95,31 +130,36 @@ try {
     $allItems = Get-ChildItem -LiteralPath $TargetPath -Recurse -Force -ErrorAction SilentlyContinue
 } catch {
     Write-Warning "Error enumerating path: $_"
+    Write-Log "Error enumerating path: $_" -Level "WARNING"
     $allItems = @()
 }
 
 $totalItems = ($allItems | Measure-Object).Count
-Write-Host "Found $totalItems items to process"
-Write-Host ""
+Write-Log "Found $totalItems items to process"
+""
 
 # Try bulk icacls first (fast path for accessible files)
 Write-Host "Attempting bulk icacls operation on root..."
+Write-Log "Attempting bulk icacls operation on root..."
 try {
-    $bulkResult = & icacls.exe $TargetPath /inheritance:e /T /C 2>&1
+    & icacls.exe $TargetPath /inheritance:e /T /C 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Bulk operation completed successfully."
+        Write-Log "Bulk operation completed successfully."
         Write-Host "No failures detected."
-
-        # Write empty CSV with header
+        Write-Log "No failures detected."
         "FilePath,FileName,ParentFolder,FolderName,ErrorReason,PathLength,IsLongPath,Timestamp" | Set-Content -Path $OutputCsv -Encoding UTF8
         Write-Host "CSV: $OutputCsv"
+        Write-Log "CSV: $OutputCsv"
+        Write-Log "Script completed successfully (bulk path)."
         exit 0
     }
     Write-Host "Bulk operation completed with errors (exit code: $LASTEXITCODE)"
+    Write-Log "Bulk operation completed with errors (exit code: $LASTEXITCODE)"
     Write-Host "Individual processing will identify specific failures..."
+    Write-Log "Individual processing will identify specific failures..."
 } catch {
-    Write-Host "Bulk operation failed: $_"
-    Write-Host "Falling back to individual file processing..."
+    Write-Log "Bulk operation failed: $_. Continuing with individual processing..."
 }
 
 Write-Host ""
@@ -132,13 +172,14 @@ foreach ($item in $allItems) {
 
     if ($processedCount % 100 -eq 0) {
         Write-Host "Processed: $processedCount / $totalItems (Failures: $failedCount)"
+        Write-Log "Progress: Processed $processedCount / $totalItems (Failures: $failedCount)"
     }
 
     try {
         $errorOutput = & icacls.exe $fullPath /inheritance:e /C 2>&1
 
         if ($LASTEXITCODE -ne 0) {
-            Add-Failure -FullPath $fullPath -ErrorReason (Get-ErrorReason -ExitCode $LASTEXITCODE -ErrorOutput ($errorOutput -join " ")) -FailedItems $failedItems
+            Add-Failure -FullPath $fullPath -ErrorReason (Get-ErrorReason -ExitCode $LASTEXITCODE -ErrorOutput $errorOutput) -FailedItems $failedItems
             $failedCount++
         }
     } catch {
@@ -153,11 +194,18 @@ $failedItems | Select-Object FilePath, FileName, ParentFolder, FolderName, Error
 # Console summary
 Write-Host ""
 Write-Host "=========================================="
+Write-Log "=========================================="
 Write-Host "Summary"
+Write-Log "Summary"
 Write-Host "=========================================="
+Write-Log "=========================================="
+
 Write-Host "Total items processed: $processedCount"
+Write-Log "Total items processed: $processedCount"
 Write-Host "Failed items:          $failedCount"
+Write-Log "Failed items:          $failedCount"
 Write-Host "CSV:                   $OutputCsv"
+Write-Log "CSV:                   $OutputCsv"
 
 if ($failedCount -gt 0) {
     Write-Host ""
@@ -168,3 +216,4 @@ if ($failedCount -gt 0) {
 
 Write-Host ""
 Write-Host "Done."
+Write-Log "Done."
