@@ -6,7 +6,6 @@
     Runs icacls inheritance:e /T on a target path, captures per-item failures
     and writes them to a CSV that can be fed to Take-Ownership.ps1 for recovery.
 
-    Robustness guarantees:
       * NEVER stops on a single file failure - the per-item loop continues
         on every error and records it.
       * Files that fail to enumerate (access denied, lock, bad path) are
@@ -45,11 +44,7 @@ param(
     [string]$LogPath = ''
 )
 
-# Load shared helpers (pure + I/O functions, constants).
-# This file has no top-level code so it is safe to dot-source.
 . (Join-Path $PSScriptRoot '_Common.ps1')
-
-#region Main
 
 function Invoke-FixInheritance {
     [CmdletBinding()]
@@ -59,7 +54,6 @@ function Invoke-FixInheritance {
         [string]$LogPath = ''
     )
 
-    # --- Path resolution ---
     $OutputCsv = Resolve-OutputCsvPath $OutputPath
     if ([string]::IsNullOrWhiteSpace($LogPath)) {
         $LogPath = [System.IO.Path]::GetFullPath("$OutputPath.log")
@@ -69,12 +63,9 @@ function Invoke-FixInheritance {
     New-DirectoryIfMissing ([System.IO.Path]::GetDirectoryName($OutputCsv))
     New-DirectoryIfMissing ([System.IO.Path]::GetDirectoryName($LogPath))
 
-    # --- Validate target ---
     if (-not (Test-Path -LiteralPath $TargetPath)) {
         Write-Status "Target path does not exist: $TargetPath" -Level 'ERROR'
         Write-Error "Target path does not exist: $TargetPath"
-        # Always emit a CSV (header-only) so downstream tooling
-        # (Take-Ownership.ps1) can rely on its presence.
         Write-FailureCsv -FailedItems @() -OutputCsv $OutputCsv
         return
     }
@@ -86,7 +77,6 @@ function Invoke-FixInheritance {
     Write-Status "Output CSV:   $OutputCsv"
     Write-Status "Log file:     $LogPath"
 
-    # --- Enumerate ---
     $failedItems  = [System.Collections.Generic.List[object]]::new()
     $failedCount  = 0
     $enumErrors   = $null
@@ -95,10 +85,16 @@ function Invoke-FixInheritance {
             -ErrorAction SilentlyContinue -ErrorVariable enumErrors
     } catch {
         Write-Status "Error enumerating path: $_" -Level 'WARNING'
-        $allItems = @()
+        if (-not $allItems) { $allItems = @() }
+        if (-not $enumErrors) {
+            Add-Failure -FullPath $TargetPath `
+                -ErrorReason "Cannot enumerate (likely access denied or path error): $($_.Exception.Message)" `
+                -FailedItems $failedItems
+            $failedCount++
+            Write-Status "Recorded terminating enumeration error against target path." -Level 'WARNING'
+        }
     }
 
-    # Capture items that failed to enumerate (access denied, lock, etc.)
     if ($enumErrors) {
         foreach ($err in $enumErrors) {
             $p = Get-ErrorRecordPath -Record $err
@@ -118,22 +114,26 @@ function Invoke-FixInheritance {
     $foldersProcessed = 0
     Write-Status "Found $totalItems enumerable items (Files: $actualFileCount, Folders: $folderCount) plus $failedCount items that failed enumeration"
 
-    # --- Bulk icacls ---
-    # icacls with /C returns exit code 0 even if some items failed.
-    # We never trust $LASTEXITCODE -eq 0 as proof of "no failures" -
-    # we always do the per-item pass below to enumerate exact failures
-    # for the CSV. The bulk pass is a speed optimisation that
-    # pre-modifies the easy items in one process.
     Write-Status 'Attempting bulk icacls operation on root...'
     try {
-        $r = Invoke-NativeCommand -FileName 'icacls.exe' -Arguments @((Get-LongPath $TargetPath), '/inheritance:e', '/T', '/C')
+        $r = Invoke-NativeCommand -FileName 'icacls.exe' -Arguments @((Get-LongPath $TargetPath), '/inheritance:e', '/T', '/C') -ThrowOnError
         Write-Status "Bulk operation finished (exit code: $($r.ExitCode)). Per-item verification will identify exact failures."
+        if ($r.ExitCode -ne 0) {
+            $combined = "$($r.Output)`n$($r.Error)"
+            Add-Failure -FullPath $TargetPath `
+                -ErrorReason (Get-ErrorReason -ExitCode $r.ExitCode -ErrorOutput $combined) `
+                -FailedItems $failedItems
+            $failedCount++
+            Write-Status "Recorded bulk icacls failure against target path." -Level 'WARNING'
+        }
     } catch {
         Write-Status "Bulk operation failed: $_" -Level 'WARNING'
+        Add-Failure -FullPath $TargetPath `
+            -ErrorReason "Bulk operation exception: $($_.Exception.Message)" `
+            -FailedItems $failedItems
+        $failedCount++
     }
 
-    # --- Per-item pass ---
-    # try/catch ensures a single file's exception does NOT stop the loop.
     Write-Status 'Processing items individually to identify failures (continues on all errors)...'
 
     foreach ($item in $allItems) {
@@ -146,7 +146,7 @@ function Invoke-FixInheritance {
         }
 
         try {
-            $r = Invoke-NativeCommand -FileName 'icacls.exe' -Arguments @((Get-LongPath $fullPath), '/inheritance:e', '/C')
+            $r = Invoke-NativeCommand -FileName 'icacls.exe' -Arguments @((Get-LongPath $fullPath), '/inheritance:e', '/C') -ThrowOnError
             if ($r.ExitCode -ne 0) {
                 $combined = "$($r.Output)`n$($r.Error)"
                 Add-Failure -FullPath $fullPath -ErrorReason (Get-ErrorReason -ExitCode $r.ExitCode -ErrorOutput $combined) -FailedItems $failedItems
@@ -158,10 +158,8 @@ function Invoke-FixInheritance {
         }
     }
 
-    # --- Export CSV ---
     Write-FailureCsv -FailedItems $failedItems -OutputCsv $OutputCsv
 
-    # --- Summary ---
     $enumErrorCount = @($enumErrors).Count
     Write-Section 'Summary'
     Write-Status "Items discovered:       $totalItems"
@@ -198,12 +196,7 @@ function Invoke-FixInheritance {
     Write-Status 'Done.'
     return $countMismatch
 }
-#endregion
 
-# --- Invocation guard ---
-# Run main only when the script is invoked directly, not when dot-sourced
-# for testing (in which case the test invokes Invoke-FixInheritance with
-# its own parameters).
 if ($MyInvocation.InvocationName -ne '.') {
     $scriptErrors = $null
     $countMismatch = Invoke-FixInheritance @PSBoundParameters -ErrorVariable scriptErrors

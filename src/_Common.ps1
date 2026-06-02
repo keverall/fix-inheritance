@@ -190,8 +190,9 @@ function Write-Section {
 function Invoke-NativeCommand {
     param(
         [Parameter(Mandatory = $true)][string]$FileName,
-        [Parameter(Mandatory = $true)][string[]]$Arguments
-    )
+    [Parameter(Mandatory = $true)][string[]]$Arguments,
+    [switch]$ThrowOnError
+)
     $result = [PSCustomObject]@{ ExitCode = 0; Output = ''; Error = '' }
     try {
         $psi = New-Object System.Diagnostics.ProcessStartInfo
@@ -219,6 +220,7 @@ function Invoke-NativeCommand {
         $result.Error     = $errTask.Result
         $result.ExitCode  = $proc.ExitCode
     } catch {
+        if ($ThrowOnError) { throw }
         $result.ExitCode = -1
         $result.Error    = "Failed to invoke $FileName : $($_.Exception.Message)"
     }

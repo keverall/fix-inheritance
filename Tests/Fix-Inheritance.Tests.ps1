@@ -300,4 +300,22 @@ Describe "Fix-Inheritance integration tests" {
         Test-Path $csv | Should -Be $true
         Test-Path $log | Should -Be $true
     }
+
+    It "Records the target path when the bulk icacls operation fails and enumeration also fails" {
+        $csv = Join-Path $script:root 'out.csv'
+        $log = Join-Path $script:root 'out.log'
+        Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log
+        $rows = Import-Csv -Path $csv
+        $targetMatches = @($rows | Where-Object { $_.FilePath -eq $script:root -or $_.ParentFolder -eq $script:root })
+        $targetMatches.Count | Should -BeGreaterThan 0
+    }
+
+    It "Resolves default LogPath next to OutputPath (regression for broken syntax)" {
+        New-Item -ItemType File -Path (Join-Path $script:root 'x.txt') -Force | Out-Null
+        $csv = Join-Path $script:root 'myname'
+        $log = Join-Path $script:root 'myname.log'
+        Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv
+        Test-Path "$csv.csv" | Should -Be $true
+        Test-Path $log | Should -Be $true
+    }
 }
