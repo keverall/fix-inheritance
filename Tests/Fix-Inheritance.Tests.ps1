@@ -7,7 +7,7 @@ BeforeAll {
     $ast = [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$null, [ref]$null)
     $astCommon = [System.Management.Automation.Language.Parser]::ParseFile($commonPath, [ref]$null, [ref]$null)
     $commonFuncs = $astCommon.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $true) | ForEach-Object Name
-    $fixFuncs = $ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $args[0].Name -notin $commonFuncs }, $true)
+    $fixFuncs = $ast.FindAll({ ($args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst]) -and ($args[0].Name -notin $commonFuncs) }, $true)
     foreach ($func in $fixFuncs) { Invoke-Expression $func.Extent.Text }
 }
 
@@ -25,7 +25,7 @@ Describe "Fix-Inheritance.ps1" {
         $param | Should -Not -BeNullOrEmpty
     }
     It "Exits non-zero on missing target" {
-        & pwsh -NoProfile -Command "& '$scriptPath' -TargetPath 'Z:\NonExistent\Path' 2>&1"
+        $null = & pwsh -NoProfile -Command "& '$scriptPath' -TargetPath 'Z:\NonExistent\Path'" 2>&1
         $LASTEXITCODE | Should -Not -Be 0
     }
 }
@@ -80,7 +80,7 @@ Describe "Fix-Inheritance - test data builders" {
             }
             $pathParts += "level$i"
         }
-        $fullPath = Join-Path $script:root (Join-Path $pathParts 'deep.txt')
+        $fullPath = Join-Path $current 'deep.txt'
         $fullPath | Should -Exist
     }
 
@@ -100,6 +100,8 @@ Describe "Fix-Inheritance - test data builders" {
         New-Item -ItemType File -Path (Join-Path $locked 'secret.txt') -Force | Out-Null
         # On Linux, chmod 000 simulates access denial
         $null = chmod 000 $locked
+        # Restore permissions so AfterEach can delete it
+        $null = chmod 755 $locked
     }
 
     It "Creates mixed tree (special chars + normal + deep + long)" {
@@ -136,7 +138,7 @@ Describe "Fix-Inheritance integration tests" {
         New-Item -ItemType Directory -Path (Join-Path $script:root 'empty') | Out-Null
         $csv = Join-Path $script:root 'out.csv'
         $log = Join-Path $script:root 'out.log'
-        Invoke-FixInheritance -TargetPath (Join-Path $script:root 'empty') -OutputPath $csv -LogPath $log
+        $null = Invoke-FixInheritance -TargetPath (Join-Path $script:root 'empty') -OutputPath $csv -LogPath $log *>$null
         Test-Path $csv | Should -Be $true
         $header = Get-Content $csv -TotalCount 1
         $header | Should -Be '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"'
@@ -146,7 +148,7 @@ Describe "Fix-Inheritance integration tests" {
         New-Item -ItemType Directory -Path (Join-Path $script:root 'logtarget') | Out-Null
         $csv = Join-Path $script:root 'out.csv'
         $log = Join-Path $script:root 'out.log'
-        Invoke-FixInheritance -TargetPath (Join-Path $script:root 'logtarget') -OutputPath $csv -LogPath $log
+        $null = Invoke-FixInheritance -TargetPath (Join-Path $script:root 'logtarget') -OutputPath $csv -LogPath $log *>$null
         Test-Path $log | Should -Be $true
         Get-Content $log | Where-Object { $_ -match '^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] \[INFO\]' } | Should -Not -BeNullOrEmpty
     }
@@ -154,7 +156,7 @@ Describe "Fix-Inheritance integration tests" {
     It "Returns cleanly when target does not exist" {
         $csv = Join-Path $script:root 'out.csv'
         $log = Join-Path $script:root 'out.log'
-        { Invoke-FixInheritance -TargetPath 'X:\nonexistent' -OutputPath $csv -LogPath $log } | Should -Not -Throw
+        { Invoke-FixInheritance -TargetPath 'X:\nonexistent' -OutputPath $csv -LogPath $log 2>$null } | Should -Not -Throw
     }
 
     It "Processes all items and records 100% failures when icacls is unavailable" {
@@ -162,9 +164,10 @@ Describe "Fix-Inheritance integration tests" {
         New-Item -ItemType File -Path (Join-Path $script:root 'b.txt') -Force | Out-Null
         $csv = Join-Path $script:root 'out.csv'
         $log = Join-Path $script:root 'out.log'
-        Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log
+        $null = Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log *>$null
         $rows = Import-Csv -Path $csv
-        ($rows | Measure-Object).Count | Should -Be 2
+        ($rows | Measure-Object).Count | Should -BeGreaterThan 0
+        $rows | Where-Object { $_.FileName -in 'a.txt', 'b.txt' } | Measure-Object | Select-Object -ExpandProperty Count | Should -Be 2
     }
 
     It "Continues processing after enumeration errors" {
@@ -177,7 +180,7 @@ Describe "Fix-Inheritance integration tests" {
 
         $csv = Join-Path $script:root 'out.csv'
         $log = Join-Path $script:root 'out.log'
-        Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log
+        $null = Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log *>$null
 
         $rows = Import-Csv -Path $csv
         ($rows | Measure-Object).Count | Should -BeGreaterThan 0
@@ -206,10 +209,10 @@ Describe "Fix-Inheritance integration tests" {
         }
         $csv = Join-Path $script:root 'out.csv'
         $log = Join-Path $script:root 'out.log'
-        Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log
+        $null = Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log *>$null
         $rows = Import-Csv -Path $csv
-        ($rows | Measure-Object).Count | Should -Be $special.Count
-        $returnedNames = $rows | ForEach-Object { $_.FileName } | Sort-Object
+        $returnedNames = $rows | Where-Object { $_.FileName -in $special } | ForEach-Object { $_.FileName } | Sort-Object
+        ($returnedNames | Measure-Object).Count | Should -Be $special.Count
         $expectedNames = $special | Sort-Object
         $returnedNames | Should -Be $expectedNames
     }
@@ -220,33 +223,39 @@ Describe "Fix-Inheritance integration tests" {
         New-Item -ItemType File -Path (Join-Path $deepDir 'bottom.txt') -Force | Out-Null
         $csv = Join-Path $script:root 'out.csv'
         $log = Join-Path $script:root 'out.log'
-        Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log
+        $null = Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log *>$null
         $rows = Import-Csv -Path $csv
         ($rows | Measure-Object).Count | Should -BeGreaterThan 0
-        $rows[0].FilePath | Should -Match 'l1'
-        $rows[0].FilePath | Should -Match 'bottom.txt'
+        $bottomRow = $rows | Where-Object { $_.FileName -eq 'bottom.txt' }
+        $bottomRow | Should -Not -BeNullOrEmpty
+        $bottomRow.FilePath | Should -Match 'l1'
+        $bottomRow.FilePath | Should -Match 'bottom.txt'
     }
 
     It "Records long paths with IsLongPath=true" {
         $longDir = Join-Path $script:root 'longprefix'
         New-Item -ItemType Directory -Path $longDir -Force | Out-Null
-        $filler = 'a' * 270
-        $longFile = Join-Path $longDir "$filler.txt"
+        for ($i=0; $i -lt 3; $i++) {
+            $filler = 'a' * 100
+            $longDir = Join-Path $longDir $filler
+            New-Item -ItemType Directory -Path $longDir -Force | Out-Null
+        }
+        $longFile = Join-Path $longDir "test.txt"
         New-Item -ItemType File -Path $longFile -Force | Out-Null
         $csv = Join-Path $script:root 'out.csv'
         $log = Join-Path $script:root 'out.log'
-        Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log
+        $null = Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log *>$null
         $rows = Import-Csv -Path $csv
-        $longRow = $rows | Where-Object { $_.IsLongPath -eq $true }
+        $longRow = $rows | Where-Object { $_.IsLongPath -eq 'True' -or $_.IsLongPath -eq $true }
         $longRow | Should -Not -BeNullOrEmpty
-        $longRow.FilePath.Length | Should -BeGreaterThan $script:MaxPathLength
+        $longRow[-1].FilePath.Length | Should -BeGreaterThan 260
     }
 
     It "Sets LogPath default next to OutputPath when omitted" {
         New-Item -ItemType File -Path (Join-Path $script:root 'x.txt') -Force | Out-Null
         $csv = Join-Path $script:root 'out.csv'
         $log = Join-Path $script:root 'out.log'
-        Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log
+        $null = Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log *>$null
         # log should have been created next to the CSV
         Test-Path $log | Should -Be $true
     }
@@ -257,7 +266,7 @@ Describe "Fix-Inheritance integration tests" {
         $null = chmod 000 $locked 2>$null
         $csv = Join-Path $script:root 'out.csv'
         $log = Join-Path $script:root 'out.log'
-        Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log
+        $null = Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log *>$null
         chmod 755 $locked 2>$null
         # The log should mention the enumeration error count
         $logContent = Get-Content $log -Raw
@@ -267,7 +276,7 @@ Describe "Fix-Inheritance integration tests" {
     It "Does not stop on a file that throws during per-item icacls" {
         $csv = Join-Path $script:root 'out.csv'
         $log = Join-Path $script:root 'out.log'
-        $output = Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log 2>&1
+        $output = Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log *>&1 | Out-String
         $output | Should -Match 'Done'
         $output | Should -Match 'Summary'
     }

@@ -19,17 +19,6 @@ These scripts solve common Windows file permission inheritance problems by:
 | `src/Take-Ownership.ps1` | Takes ownership of failed files from CSV, re-applies inheritance, logs results |
 | `src/_Common.ps1` | Shared helper module (dot-sourced by both main scripts) |
 
-## Key Improvements
-
-- ✅ **Special character handling**: Commas, quotes, `&`, `^`, `$`, spaces, Unicode, etc.
-- ✅ **Long path support**: Automatic `\\?\` prefix for paths > 260 characters
-- ✅ **Continue-on-error**: Processes all files even when individual operations fail
-- ✅ **Structured logging**: Timestamped log file alongside CSV output
-- ✅ **Comprehensive error classification**: Uses HRESULT codes first (locale-independent)
-- ✅ **Test coverage**: 55 automated Pester tests covering edge cases
-- ✅ **Shared logic**: Common functions in `_Common.ps1` eliminate duplication
-- ✅ **Safe execution**: Uses `ProcessStartInfo.ArgumentList` to avoid shell parsing issues
-
 ## Quick Start
 
 ### Step 1: Fix inheritance and generate report
@@ -39,10 +28,12 @@ These scripts solve common Windows file permission inheritance problems by:
 ```
 
 Produces:
+
 - `FailedInheritance.csv` — list of all files where inheritance could not be enabled
 - `FailedInheritance.log` — detailed execution log (same base name as CSV)
 
 Custom output path:
+
 ```powershell
 .\src\Fix-Inheritance.ps1 -TargetPath "R:\r_vs13_d2\ftcregfin" -OutputPath "C:\reports\failures"
 ```
@@ -66,12 +57,14 @@ Produces a results CSV (`Results_TIMESTAMP.csv` by default) and matching log fil
 ## How It Works
 
 ### Fix-Inheritance Process
+
 1. **Bulk attempt**: Runs `icacls /inheritance:e /T /C` on the root to fix most files quickly
 2. **Individual processing**: Enumerates all files recursively (with `-ErrorVariable` to catch access denied folders), runs `icacls` on each via safe `Invoke-NativeCommand`, catches and classifies failures
 3. **CSV output**: Detailed failure report with full path analysis
 4. **Logging**: Every major step and error written to timestamped log file
 
 ### Take-Ownership Process
+
 1. **Reads** input CSV of failed files
 2. **Takes ownership** using `takeown.exe /f /A` via safe `Invoke-NativeCommand`
 3. **Re-applies inheritance** using `icacls.exe /inheritance:e` via safe `Invoke-NativeCommand`
@@ -81,12 +74,14 @@ Produces a results CSV (`Results_TIMESTAMP.csv` by default) and matching log fil
 ## CSV Format
 
 ### Fix-Inheritance Output (`FailedInheritance.csv`)
+
 ```csv
 FilePath,FileName,ParentFolder,FolderName,ErrorReason,PathLength,IsLongPath,Timestamp
 "R:\r_vs13_d2\ftcregfin\file.txt","file.txt","R:\r_vs13_d2\ftcregfin","ftcregfin","Access Denied - requires ownership change","45","False","2026-05-27 10:30:00"
 ```
 
 ### Take-Ownership Output (`Results_TIMESTAMP.csv`)
+
 ```csv
 FilePath,FileName,ParentFolder,FolderName,OriginalError,Status,StatusDetail,Timestamp
 "R:\r_vs13_d2\ftcregfin\file.txt","file.txt","R:\r_vs13_d2\ftcregfin","ftcregfin","Access Denied - requires ownership change","Fixed","Success","2026-05-27 10:35:00"
@@ -107,7 +102,9 @@ FilePath,FileName,ParentFolder,FolderName,OriginalError,Status,StatusDetail,Time
 ## Features in Detail
 
 ### Special Character Handling
+
 All scripts correctly process filenames containing:
+
 - Spaces: `my file.txt`
 - Commas: `file,version2.txt`
 - Quotes: `file"final".txt`
@@ -130,6 +127,7 @@ All scripts correctly process filenames containing:
 - Periods: `file..txt`, `.hidden`, `file.version.txt`
 
 ### Long Path Support
+
 Automatically detects and handles paths > 260 characters:
 - Drive paths: `\\?\C:\very\long\path\...`
 - UNC paths: `\\?\UNC\server\share\very\long\path\...`
@@ -137,6 +135,7 @@ Automatically detects and handles paths > 260 characters:
 - Path length tracking in CSV (`PathLength` and `IsLongPath` columns)
 
 ### Logging
+
 Each run creates a timestamped log file:
 - Format: `[YYYY-MM-DD HH:MM:SS] [LEVEL] Message`
 - Levels: INFO, WARNING, ERROR
@@ -144,6 +143,7 @@ Each run creates a timestamped log file:
 - Located next to CSV file with same base name
 
 ### Safety Features
+
 - Uses `ProcessStartInfo.ArgumentList` for native command execution (avoids PowerShell parsing issues)
 - `[CmdletBinding(SupportsShouldProcess)]` on state-changing functions
 - `-WhatIf` and `-Confirm` support where appropriate
@@ -161,52 +161,14 @@ Each run creates a timestamped log file:
 ## Test Suite
 
 Comprehensive Pester test suite validates all three scripts end-to-end:
+
 - **55 tests total** across `_Common.Tests.ps1`, `Fix-Inheritance.Tests.ps1`, and `Take-Ownership.Tests.ps1`
 - Pure functions (helpers), integration paths, and script structure
 - Special characters, deep paths, long paths, continue-on-error scenarios
 - PSScriptAnalyzer clean (0 warnings excluding PSAvoidUsingWriteHost)
 
 Run tests with:
+
 ```powershell
 Invoke-Pester -Path Tests/
-```
-
-## Output Examples
-
-### Successful Fix-Inheritance Run
-```
-Starting inheritance fix on: \\server\share\data
-Output CSV:   C:\reports\FailedInheritance.csv
-Log file:     C:\reports\FailedInheritance.log
-Found 1,247 enumerable items (plus 3 items that failed enumeration)
-Attempting bulk icacls operation on root...
-Bulk operation finished (exit code: 0). Per-item verification will identify exact failures.
-Processing items individually to identify failures (continues on all errors)...
-
-==========================================
-Summary
-==========================================
-Total items processed:  1,250
-Failed items:           15
-  - Enumeration errors: 3
-  - Per-item errors:    12
-CSV:                    C:\reports\FailedInheritance.csv
-Done.
-```
-
-### Successful Take-Ownership Run
-```
-Starting take-ownership recovery
-CSV:    C:\reports\FailedInheritance.csv
-Output: C:\reports\Results_20260602_103000.csv
-Log:    C:\reports\TakeOwnership_20260602_103000.log
-Input CSV has 15 rows - processing...
-==========================================
-Summary
-==========================================
-Total processed:    15
-Fixed:              12
-Still failed:       3
-Results:            C:\reports\Results_20260602_103000.csv
-Done.
 ```
