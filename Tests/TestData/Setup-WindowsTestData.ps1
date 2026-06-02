@@ -61,20 +61,20 @@ Set-Acl "$TestRoot\forbidden" $acl
 New-Item -ItemType Directory -Path "$TestRoot\inuse" -Force | Out-Null
 "locked file" | Set-Content -Path "$TestRoot\inuse\locked.txt"
 # Open file handle (simulates file in use)
-$stream = [System.IO.File]::Open("$TestRoot\inuse\locked.txt", "Open", "ReadWrite", "None")
+$script:openHandleCmd = "[System.IO.File]::Open(`"$TestRoot\inuse\locked.txt`", 'Open', 'ReadWrite', 'None').Close()"
 
 Write-Host "Test data setup complete!"
 Write-Host ""
 Write-Host "Run fix-inheritance with:"
-Write-Host "  pwsh -File .\src\Fix-Inheritance.ps1 -TargetPath '$TestRoot' -OutputPath '.\output\TestResults.csv' -LogPath '.\output\TestResults.log'"
+Write-Host "  pwsh -File .\src\Fix-Inheritance.ps1 -TargetPath `"$TestRoot`" -OutputPath '.\output\TestResults.csv' -LogPath '.\output\TestResults.log'"
 Write-Host ""
 Write-Host "After testing, clean up with:"
-Write-Host "  Remove-Item -Path '$TestRoot' -Recurse -Force"
+Write-Host "  Remove-Item -Path `"$TestRoot`" -Recurse -Force"
 Write-Host ""
 Write-Host "To close the file handle (if needed):"
-Write-Host "  [System.IO.File]::Open('$TestRoot\inuse\locked.txt', 'Open', 'ReadWrite', 'None') | Close()"
+Write-Host "  $openHandleCmd"
 
 # Output the file handle for cleanup
 Write-Host ""
 Write-Host "FILE_STREAM_FOR_CLEANUP:"
-Write-Host "  [System.IO.File]::Open('$TestRoot\inuse\locked.txt', 'Open', 'ReadWrite', 'None') | Close()"
+Write-Host "  $openHandleCmd"
