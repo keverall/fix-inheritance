@@ -172,7 +172,7 @@ function Invoke-FixInheritance {
     if ($failedCount -gt 0) {
         Write-Status 'Error breakdown:'
         $failedItems | Group-Object ErrorReason | Sort-Object Count -Descending | Format-Table Count, Name -AutoSize
-        Write-Status 'Use Take-Ownership.ps1 or Take-Ownership.bat to fix failed items.'
+        Write-Status 'Use Take-Ownership.ps1 to fix failed items.'
     }
 
     Write-Status 'Done.'

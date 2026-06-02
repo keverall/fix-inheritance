@@ -17,7 +17,6 @@ These scripts solve common Windows file permission inheritance problems by:
 |--------|---------|
 | `src/Fix-Inheritance.ps1` | Scans target path, attempts to enable inheritance, logs all failures to CSV |
 | `src/Take-Ownership.ps1` | Takes ownership of failed files from CSV, re-applies inheritance, logs results |
-| `src/Take-Ownership.bat` | Batch alternative for take ownership from CSV |
 | `src/_Common.ps1` | Shared helper module (dot-sourced by both main scripts) |
 
 ## Key Improvements
@@ -52,21 +51,11 @@ Produces `failures.csv` and `failures.log`.
 
 ### Step 2: Take ownership of failed files (run as Administrator)
 
-**PowerShell:**
 ```powershell
 .\src\Take-Ownership.ps1 -CsvPath "FailedInheritance.csv"
 ```
 
-**Batch:**
-```cmd
-REM Open Command Prompt as Administrator, then run:
-src\Take-Ownership.bat "FailedInheritance.csv"
-
-REM With custom output path:
-src\Take-Ownership.bat "FailedInheritance.csv" "C:\reports\Results.csv"
-```
-
-Both produce a results CSV (`Results_TIMESTAMP.csv` by default) and matching log file.
+Produces a results CSV (`Results_TIMESTAMP.csv` by default) and matching log file.
 
 ### Step 3: Re-run if needed
 
@@ -94,13 +83,13 @@ Both produce a results CSV (`Results_TIMESTAMP.csv` by default) and matching log
 ### Fix-Inheritance Output (`FailedInheritance.csv`)
 ```csv
 FilePath,FileName,ParentFolder,FolderName,ErrorReason,PathLength,IsLongPath,Timestamp
-"R:\r_vs13_d2\ftcregfin\file.txt","file.txt","R:\r_vs13_d2\ftcregfin","ftcregfin","Access Denied - requires ownership change","45","false","2026-05-27 10:30:00"
+"R:\r_vs13_d2\ftcregfin\file.txt","file.txt","R:\r_vs13_d2\ftcregfin","ftcregfin","Access Denied - requires ownership change","45","False","2026-05-27 10:30:00"
 ```
 
 ### Take-Ownership Output (`Results_TIMESTAMP.csv`)
 ```csv
-FilePath,FileName,ParentFolder,OriginalError,Status,StatusDetail,Timestamp
-"R:\r_vs13_d2\ftcregfin\file.txt","file.txt","R:\r_vs13_d2\ftcregfin","Access Denied - requires ownership change","Fixed","Success","2026-05-27 10:35:00"
+FilePath,FileName,ParentFolder,FolderName,OriginalError,Status,StatusDetail,Timestamp
+"R:\r_vs13_d2\ftcregfin\file.txt","file.txt","R:\r_vs13_d2\ftcregfin","ftcregfin","Access Denied - requires ownership change","Fixed","Success","2026-05-27 10:35:00"
 ```
 
 ## Error Reasons (Fix-Inheritance)
@@ -171,10 +160,9 @@ Each run creates a timestamped log file:
 
 ## Test Suite
 
-Comprehensive Pester test suite validates:
-- Helper functions in `_Common.ps1` (44 tests)
-- Fix-Inheritance edge cases and integration (20 tests)
-- Take-Ownership script structure and integration (11 tests)
+Comprehensive Pester test suite validates all three scripts end-to-end:
+- **55 tests total** across `_Common.Tests.ps1`, `Fix-Inheritance.Tests.ps1`, and `Take-Ownership.Tests.ps1`
+- Pure functions (helpers), integration paths, and script structure
 - Special characters, deep paths, long paths, continue-on-error scenarios
 - PSScriptAnalyzer clean (0 warnings excluding PSAvoidUsingWriteHost)
 
@@ -222,11 +210,3 @@ Still failed:       3
 Results:            C:\reports\Results_20260602_103000.csv
 Done.
 ```
-
-## Notes
-
-- Tested on Windows 10/11 and Windows Server 2016/2019/2022
-- Cross-platform compatible: Runs on Linux/macOS PowerShell 7 but Windows-specific operations are safely skipped
-- Log files grow with each run; implement log rotation if needed for frequent usage
-- CSV files can be opened in Excel, PowerShell (`Import-Csv`), or any text processor
-- Always verify results in a test environment before running on production data

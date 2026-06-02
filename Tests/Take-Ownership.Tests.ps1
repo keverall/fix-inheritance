@@ -67,7 +67,7 @@ Describe "Invoke-TakeOwnership" {
 
         Test-Path $out | Should -Be $true
         $header = Get-Content $out -TotalCount 1
-        $header | Should -Be '"FilePath","FileName","ParentFolder","OriginalError","Status","StatusDetail","Timestamp"'
+        $header | Should -Be '"FilePath","FileName","ParentFolder","FolderName","OriginalError","Status","StatusDetail","Timestamp"'
     }
 
     It "Writes structured log entries" {

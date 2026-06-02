@@ -7,7 +7,7 @@ BeforeAll {
     $ast = [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$null, [ref]$null)
     $astCommon = [System.Management.Automation.Language.Parser]::ParseFile($commonPath, [ref]$null, [ref]$null)
     $commonFuncs = $astCommon.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $true) | ForEach-Object Name
-    $fixFuncs = $ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst -and $args[0].Name -notin $commonFuncs }, $true)
+    $fixFuncs = $ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $args[0].Name -notin $commonFuncs }, $true)
     foreach ($func in $fixFuncs) { Invoke-Expression $func.Extent.Text }
 }
 
