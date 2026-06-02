@@ -108,8 +108,12 @@ function Invoke-FixInheritance {
     }
 
     $totalItems   = ($allItems | Measure-Object).Count
-    $processedCount = 0
-    Write-Status "Found $totalItems enumerable items (plus $failedCount items that failed enumeration)"
+    $actualFileCount = @($allItems | Where-Object { -not $_.PSIsContainer }).Count
+    $folderCount     = @($allItems | Where-Object { $_.PSIsContainer }).Count
+    $processedCount  = 0
+    $filesProcessed  = 0
+    $foldersProcessed = 0
+    Write-Status "Found $totalItems enumerable items (Files: $actualFileCount, Folders: $folderCount) plus $failedCount items that failed enumeration"
 
     # --- Bulk icacls ---
     # icacls with /C returns exit code 0 even if some items failed.
@@ -131,10 +135,11 @@ function Invoke-FixInheritance {
 
     foreach ($item in $allItems) {
         $processedCount++
+        if ($item.PSIsContainer) { $foldersProcessed++ } else { $filesProcessed++ }
         $fullPath = $item.FullName
 
         if ($processedCount % 100 -eq 0) {
-            Write-Status "Progress: Processed $processedCount / $totalItems (Failures: $failedCount)"
+            Write-Status "Progress: Processed $processedCount / $totalItems (Files: $filesProcessed/$actualFileCount, Folders: $foldersProcessed/$folderCount, Failures: $failedCount)"
         }
 
         try {
@@ -164,11 +169,30 @@ function Invoke-FixInheritance {
     # --- Summary ---
     $enumErrorCount = @($enumErrors).Count
     Write-Section 'Summary'
-    Write-Status "Total items processed:  $processedCount"
+    Write-Status "Items discovered:       $totalItems"
+    Write-Status "  - Files:              $actualFileCount"
+    Write-Status "  - Folders:            $folderCount"
+    Write-Status "Items processed:        $processedCount"
+    Write-Status "  - Files processed:    $filesProcessed"
+    Write-Status "  - Folders processed:  $foldersProcessed"
     Write-Status "Failed items:           $failedCount"
     Write-Status "  - Enumeration errors: $enumErrorCount"
     Write-Status "  - Per-item errors:    $($failedCount - $enumErrorCount)"
     Write-Status "CSV:                    $OutputCsv"
+
+    $countMismatch = $false
+    if ($actualFileCount -ne $filesProcessed) {
+        Write-Status "*** COUNT MISMATCH: Actual file count ($actualFileCount) does not match files processed ($filesProcessed) ***" -Level 'WARNING'
+        $countMismatch = $true
+    }
+    if ($folderCount -ne $foldersProcessed) {
+        Write-Status "*** COUNT MISMATCH: Actual folder count ($folderCount) does not match folders processed ($foldersProcessed) ***" -Level 'WARNING'
+        $countMismatch = $true
+    }
+    if (($actualFileCount + $folderCount) -ne $processedCount) {
+        Write-Status "*** COUNT MISMATCH: Total discovered ($($actualFileCount + $folderCount)) does not match total processed ($processedCount) ***" -Level 'WARNING'
+        $countMismatch = $true
+    }
 
     if ($failedCount -gt 0) {
         Write-Status 'Error breakdown:'
@@ -177,6 +201,7 @@ function Invoke-FixInheritance {
     }
 
     Write-Status 'Done.'
+    return $countMismatch
 }
 #endregion
 
@@ -186,6 +211,7 @@ function Invoke-FixInheritance {
 # its own parameters).
 if ($MyInvocation.InvocationName -ne '.') {
     $scriptErrors = $null
-    Invoke-FixInheritance @PSBoundParameters -ErrorVariable scriptErrors
+    $countMismatch = Invoke-FixInheritance @PSBoundParameters -ErrorVariable scriptErrors
     if ($scriptErrors) { exit 1 }
+    if ($countMismatch) { exit 2 }
 }
