@@ -38,7 +38,7 @@ Describe "Take-Ownership.ps1" {
     }
 
     It "Should exit with error when CSV file does not exist" {
-        $null = & pwsh -NoProfile -Command "& '$scriptPath' -CsvPath 'Z:\NonExistent\file.csv'" 2>&1
+        & pwsh -NoProfile -Command "& '$scriptPath' -CsvPath 'Z:\NonExistent\file.csv' 2>&1"
         $LASTEXITCODE | Should -Not -Be 0
     }
 }
@@ -89,7 +89,7 @@ Describe "Invoke-TakeOwnership" {
     It "Returns cleanly when CSV file does not exist" {
         $out = Join-Path $script:tmpDir "out.csv"
         $log = Join-Path $script:tmpDir "out.log"
-        { Invoke-TakeOwnership -CsvPath "X:\nonexistent.csv" -OutputCsv $out -LogPath $log 2>$null } | Should -Not -Throw
+        { Invoke-TakeOwnership -CsvPath "X:\nonexistent.csv" -OutputCsv $out -LogPath $log} | Should -Not -Throw
     }
 
     It "Does not double-append .csv to OutputCsv" {
