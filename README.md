@@ -163,6 +163,24 @@ Each run creates a log file:
 
 The scripts support both Windows PowerShell 5.1 and PowerShell 7+. When run on PowerShell 5.1, the scripts automatically route to version-specific implementations in `src/pwsh51/` that avoid PS 7+ language features.
 
+### Windows Container Testing (WinBoat)
+
+Tests can be run against a Windows container running in WinBoat (Docker) on CachyOS/Linux:
+
+1. Start a Windows container with WinBoat (noVNC):
+   ```bash
+   docker run -d --name winboat -p 47270:6080 mcr.microsoft.com/windows/servercore:ltsc2022
+   ```
+
+2. Ensure the repo is accessible at `\\host.lan\Data\repos\fix-inheritance` in the container
+
+3. Run tests - they automatically skip if WinBoat isn't available:
+   ```bash
+   pwsh ./Tests/WinBoat.Tests.ps1
+   ```
+
+These tests validate PowerShell 5.1 and 7.x compatibility on Windows with network share access.
+
 ## Test Suite
 
 Comprehensive Pester test suite validates the scripts end-to-end:
@@ -171,8 +189,47 @@ Comprehensive Pester test suite validates the scripts end-to-end:
 - Integration tests, special characters, deep paths, long paths, enumeration-error handling, and default-path resolution
 - Continue-on-error design verified across all scenarios
 
-Run tests with:
+### Running Tests
 
 ```powershell
 Invoke-Pester -Path Tests/
 ```
+
+### Windows Container Testing (WinBoat)
+
+Tests can be run against a Windows container running in WinBoat (Docker) on CachyOS/Linux:
+
+1. Start a Windows container with PowerShell:
+   ```bash
+   docker run -d --name win-test -p 5985:5985 mcr.microsoft.com/windows/servercore:ltsc2022
+   ```
+
+2. Mount the repo inside the container at `C:\Users\keverall\repos\fix-inheritance`
+
+3. Run the WinBoat tests:
+   ```bash
+   pwsh ./Tests/WinBoat.Tests.ps1
+   ```
+
+**Note:** The dockur/windows image doesn't support `docker exec` with PowerShell. Use a full Windows container like `mcr.microsoft.com/windows/servercore:ltsc2022` for testing.
+
+### Manual Windows Testing
+
+For comprehensive testing on Windows:
+
+1. Setup test data (run as Administrator):
+   ```powershell
+   .\Tests\TestData\Setup-WindowsTestData.ps1
+   ```
+
+2. Run fix-inheritance:
+   ```powershell
+   .\Tests\TestData\Run-FixInheritanceTests.ps1
+   ```
+
+This creates test files with:
+- Special character filenames (spaces, commas, quotes, etc.)
+- Deep directory structures
+- Long paths (> 260 characters)
+- Protected files (access denied)
+- Files in protected folders (enumeration errors)
