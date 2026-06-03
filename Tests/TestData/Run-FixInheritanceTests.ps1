@@ -58,7 +58,7 @@ foreach ($expected in $expectedErrors) {
 }
 
 # Check for special character handling
-$specialFiles = $errors | Where-Object { $_.FileName -match "file[,\s\"``^]" }
+$specialFiles = $errors | Where-Object { $_.FileName -match 'file[,\s"`^]' }
 if ($specialFiles) {
     Write-Host "[PASS] Special character filenames handled: $($specialFiles.Count) files"
 }
