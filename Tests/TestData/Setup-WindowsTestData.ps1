@@ -5,6 +5,26 @@ param(
     [string]$TestRoot = "S:\fix-inheritance-tests"
 )
 
+function Set-AdministratorDeniedInheritance {
+    <#
+    .SYNOPSIS
+        Creates a folder that will cause icacls /inheritance:e to fail even when
+        run as Administrator. Used to generate real CSV failure rows for testing.
+    .PARAMETER Path
+        Folder to configure.
+    #>
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not (Test-Path $Path)) {
+        New-Item -ItemType Directory -Path $Path -Force | Out-Null
+    }
+
+    # Set owner to SYSTEM and remove all Administrators permissions.
+    # This forces Access Denied on subsequent icacls /inheritance:e calls.
+    & icacls.exe $Path /inheritance:r /setowner SYSTEM /grant "SYSTEM:(OI)(CI)F" `
+        /remove:g Administrators /remove:d Administrators /c 2>$null | Out-Null
+}
+
 Write-Host "Setting up fix-inheritance test data at $TestRoot"
 
 # Clean up existing test directory
@@ -42,14 +62,12 @@ $longFileName = 'a' * (255 - $longDir.Length)
 # 5. Files that will trigger "access denied" (requires changing permissions)
 New-Item -ItemType Directory -Path "$TestRoot\protected" -Force | Out-Null
 "protected file" | Set-Content -Path "$TestRoot\protected\secret.txt"
-# Remove inheritance and explicitly deny WRITE_DAC so icacls /inheritance:e fails
-& icacls.exe "$TestRoot\protected" /inheritance:r /grant "Administrators:(OI)(CI)F" /deny "Administrators:(OI)(CI)WDAC" /c 2>$null | Out-Null
+Set-AdministratorDeniedInheritance -Path "$TestRoot\protected"
 
 # 6. Folder that cannot be enumerated
 New-Item -ItemType Directory -Path "$TestRoot\forbidden" -Force | Out-Null
 "secret" | Set-Content -Path "$TestRoot\forbidden\hidden.txt"
-# Remove inheritance and deny read/list rights → enumeration + inheritance fix will fail
-& icacls.exe "$TestRoot\forbidden" /inheritance:r /grant "Administrators:(OI)(CI)F" /deny "Administrators:(OI)(CI)RX" /c 2>$null | Out-Null
+Set-AdministratorDeniedInheritance -Path "$TestRoot\forbidden"
 
 # 7. File in use simulation
 New-Item -ItemType Directory -Path "$TestRoot\inuse" -Force | Out-Null
