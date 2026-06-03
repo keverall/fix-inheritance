@@ -19,3 +19,4 @@ workflow_test/
 # platyPS artifacts (if regenerated locally)
 Help/
 *.help.xml
+.vscode/settings.json
