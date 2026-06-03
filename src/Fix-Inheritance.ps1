@@ -43,13 +43,19 @@ param(
     [string]$LogPath = $null
 )
 
-# Robust version detection that works even when $PSScriptRoot is null
+# Robust version detection for PowerShell 7+ (handles servers where $PSVersionTable is misleading)
 $scriptRoot = if ($PSScriptRoot) { $PSScriptRoot } else { $MyInvocation.PSScriptRoot }
 if (-not $scriptRoot) { $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
 
-if ($PSVersionTable.PSVersion.Major -lt 7 -and -not $IsCoreCLR) {
+# Strong detection: treat as PS7+ if any of these are true
+$isPowerShell7OrLater = $false
+if ($PSVersionTable.PSEdition -eq 'Core') { $isPowerShell7OrLater = $true }
+if ($PSVersionTable.PSVersion.Major -ge 6) { $isPowerShell7OrLater = $true }
+if ($PSVersionTable.PSVersion.ToString() -like '*7.*') { $isPowerShell7OrLater = $true }
+
+if (-not $isPowerShell7OrLater) {
     $pwsh51Script = Join-Path $scriptRoot "pwsh51" "Fix-Inheritance.ps1"
-    if (Test-Path $pwsh51Script) {
+    if (Test-Path -LiteralPath $pwsh51Script) {
         if ($MyInvocation.InvocationName -eq '.') {
             . $pwsh51Script @PSBoundParameters
         } else {
@@ -60,7 +66,7 @@ if ($PSVersionTable.PSVersion.Major -lt 7 -and -not $IsCoreCLR) {
     }
 }
 
-. (Join-Path $PSScriptRoot '_Common.ps1')
+. (Join-Path $scriptRoot '_Common.ps1')
 
 function Invoke-FixInheritance {
     [CmdletBinding()]

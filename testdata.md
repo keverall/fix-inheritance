@@ -96,3 +96,7 @@ Failed items:           0
   - Per-item errors:    0
 CSV:                    C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
 Done.
+
+If it still fails, please run this diagnostic command and paste the output:
+
+pwsh -Command '$PSVersionTable | Format-List *; "IsCoreCLR = $IsCoreCLR"'
