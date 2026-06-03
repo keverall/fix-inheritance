@@ -100,3 +100,44 @@ Done.
 If it still fails, please run this diagnostic command and paste the output:
 
 pwsh -Command '$PSVersionTable | Format-List *; "IsCoreCLR = $IsCoreCLR"'
+
+pwsh -Command '$PSVersionTable | Format-List *; "IsCoreCLR = $IsCoreCLR"' 167ms  12:49:44 
+
+Name  : PSVersion
+Key   : PSVersion
+Value : 7.6.2
+
+Name  : PSEdition
+Key   : PSEdition
+Value : Core
+
+Name  : GitCommitId
+Key   : GitCommitId
+Value : 7.6.2
+
+Name  : OS
+Key   : OS
+Value : Microsoft Windows 10.0.22631
+
+Name  : Platform
+Key   : Platform
+Value : Win32NT
+
+Name  : PSCompatibleVersions
+Key   : PSCompatibleVersions
+Value : {1.0, 2.0, 3.0, 4.0…}
+
+Name  : PSRemotingProtocolVersion
+Key   : PSRemotingProtocolVersion
+Value : 2.4
+
+Name  : SerializationVersion
+Key   : SerializationVersion
+Value : 1.1.0.1
+
+Name  : WSManStackVersion
+Key   : WSManStackVersion
+Value : 3.0
+
+IsCoreCLR: The term 'IsCoreCLR' is not recognized as a name of a cmdlet, function, script file, or executable program.
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
