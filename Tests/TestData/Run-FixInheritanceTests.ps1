@@ -4,7 +4,7 @@
 param(
     [string]$TestRoot = "S:\",
     [string]$OutputPath = ".\output\TestResults.csv",
-    [string]$LogPath = ".\output\TestResults.log"
+    [string]$LogPath = ".\logs\TestResults.log"
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,10 +14,14 @@ Write-Host "Test Root: $TestRoot"
 Write-Host "Output: $OutputPath"
 Write-Host ""
 
-# Ensure output directory exists
+# Ensure output and logs directories exist
 $outDir = [System.IO.Path]::GetDirectoryName($OutputPath)
 if ($outDir -and -not (Test-Path $outDir)) {
     New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+}
+$logDir = [System.IO.Path]::GetDirectoryName($LogPath)
+if ($logDir -and -not (Test-Path $logDir)) {
+    New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 }
 
 # Run fix-inheritance

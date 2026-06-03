@@ -55,7 +55,7 @@ function Invoke-FixInheritance {
 
     if (-not $OutputPath) { $OutputPath = './output/FailedInheritance.csv' }
     if (-not $OutputPath.ToLower().EndsWith('.csv')) { $OutputPath = $OutputPath + '.csv' }
-    if (-not $LogPath) { $LogPath = $OutputPath -replace '\.csv$', '.log' }
+    if (-not $LogPath) { $LogPath = './logs/FailedInheritance.log' }
 
     $OutputCsv = [System.IO.Path]::GetFullPath($OutputPath)
     $LogPath = [System.IO.Path]::GetFullPath($LogPath)
