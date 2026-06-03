@@ -57,11 +57,9 @@ Set-Acl "$TestRoot\forbidden" $acl
 # Note: To fully deny access, you would need to remove all access rules
 # For testing purposes, we'll just remove inheritance
 
-# 7. File in use simulation (create a file handle)
+# 7. File in use simulation
 New-Item -ItemType Directory -Path "$TestRoot\inuse" -Force | Out-Null
 "locked file" | Set-Content -Path "$TestRoot\inuse\locked.txt"
-# Open file handle (simulates file in use)
-$script:openHandleCmd = "[System.IO.File]::Open(`"$TestRoot\inuse\locked.txt`", 'Open', 'ReadWrite', 'None').Close()"
 
 Write-Host "Test data setup complete!"
 Write-Host ""
@@ -70,11 +68,3 @@ Write-Host "  pwsh -File .\src\Fix-Inheritance.ps1 -TargetPath `"$TestRoot`" -Ou
 Write-Host ""
 Write-Host "After testing, clean up with:"
 Write-Host "  Remove-Item -Path `"$TestRoot`" -Recurse -Force"
-Write-Host ""
-Write-Host "To close the file handle (if needed):"
-Write-Host "  $openHandleCmd"
-
-# Output the file handle for cleanup
-Write-Host ""
-Write-Host "FILE_STREAM_FOR_CLEANUP:"
-Write-Host "  $openHandleCmd"
