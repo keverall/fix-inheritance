@@ -43,26 +43,13 @@ $longFileName = 'a' * (255 - $longDir.Length)
 New-Item -ItemType Directory -Path "$TestRoot\protected" -Force | Out-Null
 "protected file" | Set-Content -Path "$TestRoot\protected\secret.txt"
 # Remove inherited permissions - this will cause access denied
-try {
-    $acl = Get-Acl "$TestRoot\protected"
-    $acl.SetAccessRuleProtection($true, $false)
-    Set-Acl "$TestRoot\protected" $acl
-} catch {
-    Write-Host "Warning: Could not modify protected folder permissions: $_"
-}
+& icacls.exe "$TestRoot\protected" /inheritance:r /c 2>$null | Out-Null
 
 # 6. Folder that cannot be enumerated
 New-Item -ItemType Directory -Path "$TestRoot\forbidden" -Force | Out-Null
 "secret" | Set-Content -Path "$TestRoot\forbidden\hidden.txt"
-# Remove all permissions from the folder
-try {
-    $acl = Get-Acl "$TestRoot\forbidden"
-    $acl.SetAccessRuleProtection($true, $false)
-    $acl.SetOwner([System.Security.Principal.NTAccount]"Administrator")
-    Set-Acl "$TestRoot\forbidden" $acl
-} catch {
-    Write-Host "Warning: Could not modify forbidden folder permissions: $_"
-}
+# Remove inherited permissions
+& icacls.exe "$TestRoot\forbidden" /inheritance:r /c 2>$null | Out-Null
 # Note: To fully deny access, you would need to remove all access rules
 # For testing purposes, we'll just remove inheritance
 
