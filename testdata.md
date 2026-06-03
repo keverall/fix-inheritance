@@ -196,3 +196,11 @@ Failed items:           0
   - Per-item errors:    0
 CSV:                    C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
 Done.
+
+pwsh -Command '
+Write-Host "PSScriptRoot = $PSScriptRoot"
+Write-Host "MyInvocation.PSScriptRoot = $($MyInvocation.PSScriptRoot)"
+Write-Host "MyCommand.Path = $($MyInvocation.MyCommand.Path)"
+Write-Host "PSVersionTable:"
+$PSVersionTable | Format-List *
+'

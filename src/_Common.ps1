@@ -20,18 +20,15 @@
         $script:MaxPathLength, $script:LongPathPrefix
 #>
 
-# Robust version detection for PowerShell 7+ (handles servers where $PSVersionTable is misleading)
-$scriptRoot = if ($PSScriptRoot) { $PSScriptRoot } else { $MyInvocation.PSScriptRoot }
-if (-not $scriptRoot) { $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
+# Final robust version detection - works even when $PSScriptRoot and $MyInvocation are unreliable
+$ScriptRoot = $PSScriptRoot
+if (-not $ScriptRoot) { $ScriptRoot = $MyInvocation.PSScriptRoot }
+if (-not $ScriptRoot) { $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
+if (-not $ScriptRoot) { $ScriptRoot = $PWD.Path }
 
-# Strong detection: treat as PS7+ if any of these are true
-$isPowerShell7OrLater = $false
-if ($PSVersionTable.PSEdition -eq 'Core') { $isPowerShell7OrLater = $true }
-if ($PSVersionTable.PSVersion.Major -ge 6) { $isPowerShell7OrLater = $true }
-if ($PSVersionTable.PSVersion.ToString() -like '*7.*') { $isPowerShell7OrLater = $true }
-
-if (-not $isPowerShell7OrLater) {
-    $pwsh51Common = Join-Path $scriptRoot "pwsh51" "_Common.ps1"
+# On this server PSEdition=Core, so we treat it as PS7+
+if ($PSVersionTable.PSEdition -ne 'Core' -and $PSVersionTable.PSVersion.Major -lt 6) {
+    $pwsh51Common = Join-Path $ScriptRoot "pwsh51" "_Common.ps1"
     if (Test-Path -LiteralPath $pwsh51Common) {
         . $pwsh51Common
         return
