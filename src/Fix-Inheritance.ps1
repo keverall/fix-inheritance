@@ -43,9 +43,12 @@ param(
     [string]$LogPath = $null
 )
 
-# Robust version detection - works even when PSVersionTable is misleading
+# Robust version detection that works even when $PSScriptRoot is null
+$scriptRoot = if ($PSScriptRoot) { $PSScriptRoot } else { $MyInvocation.PSScriptRoot }
+if (-not $scriptRoot) { $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
+
 if ($PSVersionTable.PSVersion.Major -lt 7 -and -not $IsCoreCLR) {
-    $pwsh51Script = Join-Path $PSScriptRoot "pwsh51" "Fix-Inheritance.ps1"
+    $pwsh51Script = Join-Path $scriptRoot "pwsh51" "Fix-Inheritance.ps1"
     if (Test-Path $pwsh51Script) {
         if ($MyInvocation.InvocationName -eq '.') {
             . $pwsh51Script @PSBoundParameters

@@ -20,8 +20,12 @@
         $script:MaxPathLength, $script:LongPathPrefix
 #>
 
-if ($PSVersionTable.PSVersion.Major -lt 7) {
-    $pwsh51Common = Join-Path $PSScriptRoot "pwsh51" "_Common.ps1"
+# Robust version detection that works even when $PSScriptRoot is null
+$scriptRoot = if ($PSScriptRoot) { $PSScriptRoot } else { $MyInvocation.PSScriptRoot }
+if (-not $scriptRoot) { $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
+
+if ($PSVersionTable.PSVersion.Major -lt 7 -and -not $IsCoreCLR) {
+    $pwsh51Common = Join-Path $scriptRoot "pwsh51" "_Common.ps1"
     if (Test-Path $pwsh51Common) {
         . $pwsh51Common
         return
