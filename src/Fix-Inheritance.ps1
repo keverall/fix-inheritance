@@ -43,14 +43,26 @@ param(
     [string]$LogPath = $null
 )
 
-# Final robust version detection - works even when $PSScriptRoot and $MyInvocation are unreliable
+# Final robust version detection using pwsh --version as fallback (reliable on problematic servers)
 $ScriptRoot = $PSScriptRoot
 if (-not $ScriptRoot) { $ScriptRoot = $MyInvocation.PSScriptRoot }
 if (-not $ScriptRoot) { $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
 if (-not $ScriptRoot) { $ScriptRoot = $PWD.Path }
 
-# On this server PSEdition=Core, so we treat it as PS7+
-if ($PSVersionTable.PSEdition -ne 'Core' -and $PSVersionTable.PSVersion.Major -lt 6) {
+# Determine if we are running PowerShell 7+
+$isPS7 = $false
+if ($PSVersionTable.PSEdition -eq 'Core') { $isPS7 = $true }
+if ($PSVersionTable.PSVersion.Major -ge 6) { $isPS7 = $true }
+
+# Fallback: explicitly call pwsh --version (very reliable)
+if (-not $isPS7) {
+    try {
+        $pwshOutput = & pwsh --version 2>$null
+        if ($pwshOutput -like '*7.*') { $isPS7 = $true }
+    } catch {}
+}
+
+if (-not $isPS7) {
     $pwsh51Script = Join-Path $ScriptRoot "pwsh51" "Fix-Inheritance.ps1"
     if (Test-Path -LiteralPath $pwsh51Script) {
         if ($MyInvocation.InvocationName -eq '.') {
