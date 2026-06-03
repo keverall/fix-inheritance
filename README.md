@@ -35,6 +35,8 @@ Produces:
 
 Custom output path (`.csv` extension is appended automatically if omitted, and `.log` defaults next to it):
 
+**PowerShell Version Banner:** The script prints a clearly highlighted PowerShell version banner on startup (for example, `PowerShell Version: 7.6.2 (Core)`) so you can immediately confirm which runtime is executing.
+
 ```powershell
 .\src\Fix-Inheritance.ps1 -TargetPath "R:\r_vs13_d2\ftcregfin" -OutputPath "C:\reports\failures"
 ```
