@@ -27,7 +27,6 @@ jobs:
         shell: pwsh
         run: |
           $scripts = Get-ChildItem -Path . -Filter *.ps1 -Recurse | ForEach-Object FullName
-          $results = Invoke-ScriptAnalyzer -Path $scripts -Severity Error,Warning `
-            -ExcludeRule PSAvoidUsingWriteHost,PSAvoidUsingInvokeExpression,PSAvoidUsingEmptyCatchBlock,PSUseShouldProcessForStateChangingF
+          $results = Invoke-ScriptAnalyzer -Path $scripts -Severity Error -ExcludeRule PSAvoidUsingWriteHost,PSAvoidUsingInvokeExpression,PSAvoidUsingEmptyCatchBlock,PSUseShouldProcessForStateChangingF
           $results | Format-Table -AutoSize
           if ($results) { exit 1 }

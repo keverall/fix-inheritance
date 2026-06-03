@@ -2,7 +2,7 @@
 # Run this script as Administrator to create test scenarios
 
 param(
-    [string]$TestRoot = "S:\"
+    [string]$TestRoot = "C:\temp\fix-inheritance-tests"
 )
 
 Write-Host "Setting up fix-inheritance test data at $TestRoot"
@@ -22,7 +22,10 @@ New-Item -ItemType Directory -Path "$TestRoot\normal" -Force | Out-Null
 New-Item -ItemType Directory -Path "$TestRoot\special" -Force | Out-Null
 "file with spaces.txt" | Set-Content -Path "$TestRoot\special\file with spaces.txt"
 "file,comma.txt" | Set-Content -Path "$TestRoot\special\file,comma.txt"
-'file"quote.txt' | Set-Content -Path "$TestRoot\special\file`"quote.txt"
+$fileQuote = [char]34
+$fileQuotePath = "file$fileQuote.txt"
+$filePath = Join-Path "$TestRoot\special" $fileQuotePath
+Set-Content -Path $filePath -Value "file$fileQuote.txt"
 "file&ampersand.txt" | Set-Content -Path "$TestRoot\special\file&ampersand.txt"
 "file^caret.txt" | Set-Content -Path "$TestRoot\special\file^caret.txt"
 
