@@ -17,6 +17,7 @@ This creates test files at `C:\temp\fix-inheritance-tests` with:
 - Long paths (> 260 characters)
 - Protected files (access denied)
 - Enumeration-error folders
+- Locked files (simulated with inheritance removal)
 
 ### 2. Run Fix-Inheritance Tests
 
@@ -51,7 +52,7 @@ The fix-inheritance scripts automatically detect the PowerShell version and rout
 | Access Denied | Protected files/folders |
 | Cannot enumerate | Folders without read permissions |
 | Path too long | Files with paths > 260 characters |
-| File in use | Open file handles |
+| Locked files | Files with inheritance removed |
 | Invalid path/filename | Special characters in names |
 
 ## Running on Different PowerShell Versions
