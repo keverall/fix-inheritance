@@ -197,10 +197,72 @@ Failed items:           0
 CSV:                    C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
 Done.
 
-pwsh -Command '
-Write-Host "PSScriptRoot = $PSScriptRoot"
-Write-Host "MyInvocation.PSScriptRoot = $($MyInvocation.PSScriptRoot)"
-Write-Host "MyCommand.Path = $($MyInvocation.MyCommand.Path)"
-Write-Host "PSVersionTable:"
-$PSVersionTable | Format-List *
-'
+ pwsh -Command ''                                                                                            0  3s 303ms  13:05:40 
+   fix-inheritance  main  Write-Host "PSScriptRoot = $PSScriptRoot"""                                                                 0  3s 872ms  13:09:00 
+PSScriptRoot = "
+   fix-inheritance  main  Write-Host "MyInvocation.PSScriptRoot = $($MyInvocation.PSScriptRoot)"""                                              0  13:09:01 
+MyInvocation.PSScriptRoot = "
+   fix-inheritance  main  Write-Host "MyCommand.Path = $($MyInvocation.MyCommand.Path)"""                                                       0  13:09:02 
+MyCommand.Path = "
+   fix-inheritance  main  Write-Host "PSVersionTable:"""                                                                                        0  13:09:02 
+PSVersionTable:"
+   fix-inheritance  main  $PSVersionTable | Format-List *                                                                                       0  13:09:03 
+
+Name  : PSVersion
+Key   : PSVersion
+Value : 7.6.2
+
+Name  : PSEdition
+Key   : PSEdition
+Value : Core
+
+Name  : GitCommitId
+Key   : GitCommitId
+Value : 7.6.2
+
+Name  : OS
+Key   : OS
+Value : Microsoft Windows 10.0.22631
+
+Name  : Platform
+Key   : Platform
+Value : Win32NT
+
+Name  : PSCompatibleVersions
+Key   : PSCompatibleVersions
+Value : {1.0, 2.0, 3.0, 4.0…}
+
+Name  : PSRemotingProtocolVersion
+Key   : PSRemotingProtocolVersion
+Value : 2.4
+
+Name  : SerializationVersion
+Key   : SerializationVersion
+Value : 1.1.0.1
+
+Name  : WSManStackVersion
+Key   : WSManStackVersion
+Value : 3.0
+
+ .\src\Fix-Inheritance.ps1 -TargetPath "C:\tests"                                                                      0  13:05:28 
+Output file already exists and will be overwritten: C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
+Starting inheritance fix on: C:\tests
+Output CSV:   C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
+Log file:     C:\Users\98253\repos\fix-inheritance\logs\FailedInheritance.log
+Found 7 enumerable items (Files: 6, Folders: 1) plus 0 items that failed enumeration
+Attempting bulk icacls operation on root...
+Bulk operation finished (exit code 0). Per-item verification will identify exact failures.
+Processing items individually to identify failures (continues on all errors)...
+==========================================
+Summary
+==========================================
+Items discovered:       7
+  - Files:              6
+  - Folders:            1
+Items processed:        7
+  - Files processed:    6
+  - Folders processed:  1
+Failed items:           0
+  - Enumeration errors: 0
+  - Per-item errors:    0
+CSV:                    C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
