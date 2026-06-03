@@ -9,6 +9,8 @@ Write-Host "Setting up fix-inheritance test data at $TestRoot"
 
 # Clean up existing test directory
 if (Test-Path $TestRoot) {
+    # Reset ACLs first to allow deletion of folders with removed inheritance
+    & icacls.exe $TestRoot /reset /T /C 2>$null | Out-Null
     Remove-Item -Path $TestRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 New-Item -ItemType Directory -Path $TestRoot -Force | Out-Null
