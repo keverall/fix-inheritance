@@ -41,16 +41,18 @@ Set-AdministratorDeniedInheritance -Path "S:\fix-inheritance-tests\mybadfolder"
 
 Re-run the setup script to regenerate the test tree with the new reliable denial pattern.
 
- .\src\Fix-Inheritance.ps1 -TargetPath "C:\tests"                              0  12:24:33 
+
+
+ .\src\Fix-Inheritance.ps1 -TargetPath "C:\tests"                              0  12:38:21 
 Join-Path : A positional parameter cannot be found that accepts argument 'Fix-Inheritance.ps1'.
-At C:\Users\98253\repos\fix-inheritance\src\Fix-Inheritance.ps1:47 char:21
-+ ... pwsh51Script = Join-Path $PSScriptRoot "pwsh51" "Fix-Inheritance.ps1"
-+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+At C:\Users\98253\repos\fix-inheritance\src\Fix-Inheritance.ps1:51 char:21
++ ...  $pwsh51Script = Join-Path $scriptRoot "pwsh51" "Fix-Inheritance.ps1"
++                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : InvalidArgument: (:) [Join-Path], ParameterBindingException
     + FullyQualifiedErrorId : PositionalParameterNotFound,Microsoft.PowerShell.Commands.JoinPathCommand
 
 Test-Path : Cannot bind argument to parameter 'Path' because it is null.
-At C:\Users\98253\repos\fix-inheritance\src\Fix-Inheritance.ps1:48 char:19
+At C:\Users\98253\repos\fix-inheritance\src\Fix-Inheritance.ps1:52 char:19
 +     if (Test-Path $pwsh51Script) {
 +                   ~~~~~~~~~~~~~
     + CategoryInfo          : InvalidData: (:) [Test-Path], ParameterBindingValidationException
@@ -58,20 +60,21 @@ At C:\Users\98253\repos\fix-inheritance\src\Fix-Inheritance.ps1:48 char:19
    mand
 
 Join-Path : A positional parameter cannot be found that accepts argument '_Common.ps1'.
-At C:\Users\98253\repos\fix-inheritance\src\_Common.ps1:24 char:21
-+     $pwsh51Common = Join-Path $PSScriptRoot "pwsh51" "_Common.ps1"
-+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+At C:\Users\98253\repos\fix-inheritance\src\_Common.ps1:28 char:21
++     $pwsh51Common = Join-Path $scriptRoot "pwsh51" "_Common.ps1"
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : InvalidArgument: (:) [Join-Path], ParameterBindingException
     + FullyQualifiedErrorId : PositionalParameterNotFound,Microsoft.PowerShell.Commands.JoinPathCommand
 
 Test-Path : Cannot bind argument to parameter 'Path' because it is null.
-At C:\Users\98253\repos\fix-inheritance\src\_Common.ps1:25 char:19
+At C:\Users\98253\repos\fix-inheritance\src\_Common.ps1:29 char:19
 +     if (Test-Path $pwsh51Common) {
 +                   ~~~~~~~~~~~~~
     + CategoryInfo          : InvalidData: (:) [Test-Path], ParameterBindingValidationException
     + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Commands.TestPathCom
    mand
 
+Output file already exists and will be overwritten: C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
 Starting inheritance fix on: C:\tests
 Output CSV:   C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
 Log file:     C:\Users\98253\repos\fix-inheritance\logs\FailedInheritance.log
@@ -93,10 +96,3 @@ Failed items:           0
   - Per-item errors:    0
 CSV:                    C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
 Done.
-
-fix-inheritance  main  pwsh --version                                                      0  4s 486ms  12:25:22 
-PowerShell 7.6.2
-   fix-inheritance  main  $PSVersionTable.PSVersion.Major -lt 7                               0  1s 295ms  12:26:04 
-True
-   fix-inheritance  main  $PSVersionTable.PSVersion.Major                                               0  12:28:45 
-5
