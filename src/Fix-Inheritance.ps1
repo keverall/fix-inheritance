@@ -43,28 +43,25 @@ param(
     [string]$LogPath = $null
 )
 
-# Final robust version detection using pwsh --version as fallback (reliable on problematic servers)
-$ScriptRoot = $PSScriptRoot
-if (-not $ScriptRoot) { $ScriptRoot = $MyInvocation.PSScriptRoot }
-if (-not $ScriptRoot) { $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
-if (-not $ScriptRoot) { $ScriptRoot = $PWD.Path }
+# CRITICAL FIX for environment where PSScriptRoot and MyInvocation are empty
+Write-Host "=== Version Detection Debug ===" -ForegroundColor Yellow
+Write-Host "PSScriptRoot          = '$PSScriptRoot'"
+Write-Host "MyInvocation.PSScriptRoot = '$($MyInvocation.PSScriptRoot)'"
+Write-Host "MyCommand.Path        = '$($MyInvocation.MyCommand.Path)'"
+Write-Host "PWD.Path              = '$($PWD.Path)'"
+Write-Host "PSEdition             = '$($PSVersionTable.PSEdition)'"
+Write-Host "PSVersion.Major       = '$($PSVersionTable.PSVersion.Major)'"
+Write-Host "============================" -ForegroundColor Yellow
+
+$ScriptRoot = $PWD.Path  # Final fallback - use current directory
 
 # Determine if we are running PowerShell 7+
-$isPS7 = $false
-if ($PSVersionTable.PSEdition -eq 'Core') { $isPS7 = $true }
-if ($PSVersionTable.PSVersion.Major -ge 6) { $isPS7 = $true }
-
-# Fallback: explicitly call pwsh --version (very reliable)
-if (-not $isPS7) {
-    try {
-        $pwshOutput = & pwsh --version 2>$null
-        if ($pwshOutput -like '*7.*') { $isPS7 = $true }
-    } catch {}
-}
+$isPS7 = $PSVersionTable.PSEdition -eq 'Core' -or ($PSVersionTable.PSVersion.Major -ge 6)
 
 if (-not $isPS7) {
     $pwsh51Script = Join-Path $ScriptRoot "pwsh51" "Fix-Inheritance.ps1"
     if (Test-Path -LiteralPath $pwsh51Script) {
+        Write-Host "Running PS5.1 compatibility version..." -ForegroundColor Cyan
         if ($MyInvocation.InvocationName -eq '.') {
             . $pwsh51Script @PSBoundParameters
         } else {
@@ -75,6 +72,7 @@ if (-not $isPS7) {
     }
 }
 
+Write-Host "Running PowerShell 7+ version (ScriptRoot = $ScriptRoot)" -ForegroundColor Green
 . (Join-Path $ScriptRoot '_Common.ps1')
 
 function Invoke-FixInheritance {
