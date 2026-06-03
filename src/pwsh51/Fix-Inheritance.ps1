@@ -53,9 +53,10 @@ function Invoke-FixInheritance {
         [string]$LogPath = $null
     )
 
-    if (-not $OutputPath) { $OutputPath = './output/FailedInheritance.csv' }
+    $repoRoot = Split-Path $PSScriptRoot -Parent
+    if (-not $OutputPath) { $OutputPath = Join-Path $repoRoot 'output/FailedInheritance.csv' }
     if (-not $OutputPath.ToLower().EndsWith('.csv')) { $OutputPath = $OutputPath + '.csv' }
-    if (-not $LogPath) { $LogPath = './logs/FailedInheritance.log' }
+    if (-not $LogPath) { $LogPath = Join-Path $repoRoot 'logs/FailedInheritance.log' }
 
     $OutputCsv = [System.IO.Path]::GetFullPath($OutputPath)
     $LogPath = [System.IO.Path]::GetFullPath($LogPath)

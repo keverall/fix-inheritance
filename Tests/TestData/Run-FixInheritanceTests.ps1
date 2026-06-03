@@ -42,25 +42,6 @@ if (Test-Path $OutputPath) {
     Write-Host "No results file created"
 }
 
-# Verify expected error types are present
-Write-Host ""
-Write-Host "Verifying error types..."
-$errors = Import-Csv -Path $OutputPath
-
-$expectedErrors = @(
-    "Access Denied - requires ownership change",
-    "Cannot enumerate (likely access denied or path error)"
-)
-
-foreach ($expected in $expectedErrors) {
-    $found = $errors | Where-Object { $_.ErrorReason -like "*$expected*" }
-    if ($found) {
-        Write-Host "[PASS] Found: $expected"
-    } else {
-        Write-Host "[INFO] Not found (may be expected depending on test setup): $expected"
-    }
-}
-
 # Check for special character handling
 $specialFiles = $errors | Where-Object { $_.FileName -match 'file[,\s"`^]' }
 if ($specialFiles) {

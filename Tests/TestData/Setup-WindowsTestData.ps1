@@ -2,7 +2,7 @@
 # Run this script as Administrator to create test scenarios
 
 param(
-    [string]$TestRoot = "S:\fix-inheritance-tests"
+    [string]$TestRoot = "S:\"
 )
 
 function Set-AdministratorDeniedInheritance {
@@ -19,10 +19,10 @@ function Set-AdministratorDeniedInheritance {
         New-Item -ItemType Directory -Path $Path -Force | Out-Null
     }
 
-    # Set owner to SYSTEM and remove all Administrators permissions.
-    # This forces Access Denied on subsequent icacls /inheritance:e calls.
-    & icacls.exe $Path /inheritance:r /setowner SYSTEM /grant "SYSTEM:(OI)(CI)F" `
-        /remove:g Administrators /remove:d Administrators /c 2>$null | Out-Null
+    # Split into two calls — this order works reliably on all Windows versions
+    & icacls.exe $Path /setowner SYSTEM /c 2>$null | Out-Null
+    & icacls.exe $Path /inheritance:r /grant "SYSTEM:F" /remove:g Administrators `
+        /remove:d Administrators /c 2>$null | Out-Null
 }
 
 Write-Host "Setting up fix-inheritance test data at $TestRoot"
