@@ -42,16 +42,14 @@ $longFileName = 'a' * (255 - $longDir.Length)
 # 5. Files that will trigger "access denied" (requires changing permissions)
 New-Item -ItemType Directory -Path "$TestRoot\protected" -Force | Out-Null
 "protected file" | Set-Content -Path "$TestRoot\protected\secret.txt"
-# Remove inherited permissions - this will cause access denied
-& icacls.exe "$TestRoot\protected" /inheritance:r /c 2>$null | Out-Null
+# Remove inheritance and explicitly deny WRITE_DAC so icacls /inheritance:e fails
+& icacls.exe "$TestRoot\protected" /inheritance:r /grant "Administrators:(OI)(CI)F" /deny "Administrators:(OI)(CI)WDAC" /c 2>$null | Out-Null
 
 # 6. Folder that cannot be enumerated
 New-Item -ItemType Directory -Path "$TestRoot\forbidden" -Force | Out-Null
 "secret" | Set-Content -Path "$TestRoot\forbidden\hidden.txt"
-# Remove inherited permissions
-& icacls.exe "$TestRoot\forbidden" /inheritance:r /c 2>$null | Out-Null
-# Note: To fully deny access, you would need to remove all access rules
-# For testing purposes, we'll just remove inheritance
+# Remove inheritance and deny read/list rights → enumeration + inheritance fix will fail
+& icacls.exe "$TestRoot\forbidden" /inheritance:r /grant "Administrators:(OI)(CI)F" /deny "Administrators:(OI)(CI)RX" /c 2>$null | Out-Null
 
 # 7. File in use simulation
 New-Item -ItemType Directory -Path "$TestRoot\inuse" -Force | Out-Null
