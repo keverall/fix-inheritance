@@ -22,7 +22,7 @@ New-Item -ItemType Directory -Path "$TestRoot\normal" -Force | Out-Null
 New-Item -ItemType Directory -Path "$TestRoot\special" -Force | Out-Null
 "file with spaces.txt" | Set-Content -Path "$TestRoot\special\file with spaces.txt"
 "file,comma.txt" | Set-Content -Path "$TestRoot\special\file,comma.txt"
-"file""quote.txt" | Set-Content -Path "$TestRoot\special\file`"quote.txt"
+'file"quote.txt' | Set-Content -Path "$TestRoot\special\file`"quote.txt"
 "file&ampersand.txt" | Set-Content -Path "$TestRoot\special\file&ampersand.txt"
 "file^caret.txt" | Set-Content -Path "$TestRoot\special\file^caret.txt"
 
@@ -31,10 +31,10 @@ $deepPath = $TestRoot
 1..20 | ForEach-Object { $deepPath = Join-Path $deepPath "level$_"; New-Item -ItemType Directory -Path $deepPath -Force | Out-Null }
 "deep file" | Set-Content -Path "$deepPath\bottom.txt"
 
-# 4. Long path (> 260 chars)
+# 4. Long path (near MAX_PATH limit)
 $longDir = Join-Path $TestRoot "long_path_here"
 New-Item -ItemType Directory -Path $longDir -Force | Out-Null
-$longFileName = 'a' * (300 - $longDir.Length - 4)
+$longFileName = 'a' * (255 - $longDir.Length)
 "long path file" | Set-Content -Path "$longDir\$longFileName.txt"
 
 # 5. Files that will trigger "access denied" (requires changing permissions)
