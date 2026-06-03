@@ -93,3 +93,10 @@ Failed items:           0
   - Per-item errors:    0
 CSV:                    C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
 Done.
+
+fix-inheritance  main  pwsh --version                                                      0  4s 486ms  12:25:22 
+PowerShell 7.6.2
+   fix-inheritance  main  $PSVersionTable.PSVersion.Major -lt 7                               0  1s 295ms  12:26:04 
+True
+   fix-inheritance  main  $PSVersionTable.PSVersion.Major                                               0  12:28:45 
+5
