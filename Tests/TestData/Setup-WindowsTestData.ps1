@@ -2,14 +2,14 @@
 # Run this script as Administrator to create test scenarios
 
 param(
-    [string]$TestRoot = "C:\temp\fix-inheritance-tests"
+    [string]$TestRoot = "S:\"
 )
 
 Write-Host "Setting up fix-inheritance test data at $TestRoot"
 
 # Clean up existing test directory
 if (Test-Path $TestRoot) {
-    Remove-Item -Path $TestRoot -Recurse -Force
+    Remove-Item -Path $TestRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 New-Item -ItemType Directory -Path $TestRoot -Force | Out-Null
 
@@ -41,19 +41,26 @@ $longFileName = 'a' * (255 - $longDir.Length)
 New-Item -ItemType Directory -Path "$TestRoot\protected" -Force | Out-Null
 "protected file" | Set-Content -Path "$TestRoot\protected\secret.txt"
 # Remove inherited permissions - this will cause access denied
-$acl = Get-Acl "$TestRoot\protected"
-$acl.SetAccessRuleProtection($true, $false)
-Set-Acl "$TestRoot\protected" $acl
+try {
+    $acl = Get-Acl "$TestRoot\protected"
+    $acl.SetAccessRuleProtection($true, $false)
+    Set-Acl "$TestRoot\protected" $acl
+} catch {
+    Write-Host "Warning: Could not modify protected folder permissions: $_"
+}
 
 # 6. Folder that cannot be enumerated
 New-Item -ItemType Directory -Path "$TestRoot\forbidden" -Force | Out-Null
 "secret" | Set-Content -Path "$TestRoot\forbidden\hidden.txt"
 # Remove all permissions from the folder
-$acl = Get-Acl "$TestRoot\forbidden"
-$acl.SetAccessRuleProtection($true, $false)
-$rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "FullControl", "Allow")
-$acl.SetOwner([System.Security.Principal.NTAccount]"Administrator")
-Set-Acl "$TestRoot\forbidden" $acl
+try {
+    $acl = Get-Acl "$TestRoot\forbidden"
+    $acl.SetAccessRuleProtection($true, $false)
+    $acl.SetOwner([System.Security.Principal.NTAccount]"Administrator")
+    Set-Acl "$TestRoot\forbidden" $acl
+} catch {
+    Write-Host "Warning: Could not modify forbidden folder permissions: $_"
+}
 # Note: To fully deny access, you would need to remove all access rules
 # For testing purposes, we'll just remove inheritance
 
