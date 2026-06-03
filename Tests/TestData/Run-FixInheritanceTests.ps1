@@ -2,7 +2,7 @@
 # Run this script as Administrator on Windows
 
 param(
-    [string]$TestRoot = "C:\temp\fix-inheritance-tests",
+    [string]$TestRoot = "S:\",
     [string]$OutputPath = ".\output\TestResults.csv",
     [string]$LogPath = ".\output\TestResults.log"
 )
