@@ -43,7 +43,8 @@ param(
     [string]$LogPath = $null
 )
 
-if ($PSVersionTable.PSVersion.Major -lt 7) {
+# Robust version detection - works even when PSVersionTable is misleading
+if ($PSVersionTable.PSVersion.Major -lt 7 -and -not $IsCoreCLR) {
     $pwsh51Script = Join-Path $PSScriptRoot "pwsh51" "Fix-Inheritance.ps1"
     if (Test-Path $pwsh51Script) {
         if ($MyInvocation.InvocationName -eq '.') {
