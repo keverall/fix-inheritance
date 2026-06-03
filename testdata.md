@@ -40,3 +40,56 @@ Set-AdministratorDeniedInheritance -Path "S:\fix-inheritance-tests\mybadfolder"
 ```
 
 Re-run the setup script to regenerate the test tree with the new reliable denial pattern.
+
+ .\src\Fix-Inheritance.ps1 -TargetPath "C:\tests"                              0  12:24:33 
+Join-Path : A positional parameter cannot be found that accepts argument 'Fix-Inheritance.ps1'.
+At C:\Users\98253\repos\fix-inheritance\src\Fix-Inheritance.ps1:47 char:21
++ ... pwsh51Script = Join-Path $PSScriptRoot "pwsh51" "Fix-Inheritance.ps1"
++                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Join-Path], ParameterBindingException
+    + FullyQualifiedErrorId : PositionalParameterNotFound,Microsoft.PowerShell.Commands.JoinPathCommand
+
+Test-Path : Cannot bind argument to parameter 'Path' because it is null.
+At C:\Users\98253\repos\fix-inheritance\src\Fix-Inheritance.ps1:48 char:19
++     if (Test-Path $pwsh51Script) {
++                   ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidData: (:) [Test-Path], ParameterBindingValidationException
+    + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Commands.TestPathCom
+   mand
+
+Join-Path : A positional parameter cannot be found that accepts argument '_Common.ps1'.
+At C:\Users\98253\repos\fix-inheritance\src\_Common.ps1:24 char:21
++     $pwsh51Common = Join-Path $PSScriptRoot "pwsh51" "_Common.ps1"
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Join-Path], ParameterBindingException
+    + FullyQualifiedErrorId : PositionalParameterNotFound,Microsoft.PowerShell.Commands.JoinPathCommand
+
+Test-Path : Cannot bind argument to parameter 'Path' because it is null.
+At C:\Users\98253\repos\fix-inheritance\src\_Common.ps1:25 char:19
++     if (Test-Path $pwsh51Common) {
++                   ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidData: (:) [Test-Path], ParameterBindingValidationException
+    + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Commands.TestPathCom
+   mand
+
+Starting inheritance fix on: C:\tests
+Output CSV:   C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
+Log file:     C:\Users\98253\repos\fix-inheritance\logs\FailedInheritance.log
+Found 7 enumerable items (Files: 6, Folders: 1) plus 0 items that failed enumeration
+Attempting bulk icacls operation on root...
+Bulk operation finished (exit code 0). Per-item verification will identify exact failures.
+Processing items individually to identify failures (continues on all errors)...
+==========================================
+Summary
+==========================================
+Items discovered:       7
+  - Files:              6
+  - Folders:            1
+Items processed:        7
+  - Files processed:    6
+  - Folders processed:  1
+Failed items:           0
+  - Enumeration errors: 0
+  - Per-item errors:    0
+CSV:                    C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
+Done.
