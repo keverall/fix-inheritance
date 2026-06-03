@@ -38,9 +38,9 @@ if ($PSVersionTable.PSEdition -ne 'Core' -and $PSVersionTable.PSVersion.Major -l
 # Display clear PowerShell version banner (only if not already shown by main script)
 if (-not (Get-Variable -Name "FixInheritanceBannerShown" -ErrorAction SilentlyContinue)) {
     $psVer = if ($PSVersionTable.PSVersion) { $PSVersionTable.PSVersion.ToString() } else { "Unknown" }
-    $psEdition = if ($PSVersionTable.PSEdition) { $PSVersionTable.PSEdition } else { "Desktop" }
+    $psEd = if ($PSVersionTable.PSEdition) { $PSVersionTable.PSEdition } else { "Desktop" }
     Write-Host "****************************************************" -ForegroundColor Cyan
-    Write-Host "* PowerShell Version: $psVer ($psEdition)" -ForegroundColor Cyan
+    Write-Host "* PowerShell Version: $psVer ($psEd)" -ForegroundColor Cyan
     Write-Host "****************************************************" -ForegroundColor Cyan
     Write-Host ""
     Set-Variable -Name "FixInheritanceBannerShown" -Value $true -Scope Script

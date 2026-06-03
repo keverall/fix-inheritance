@@ -65,9 +65,9 @@ if ($PSVersionTable.PSEdition -ne 'Core' -and $PSVersionTable.PSVersion.Major -l
 
 # Display clear PowerShell version banner
 $psVer = if ($PSVersionTable.PSVersion) { $PSVersionTable.PSVersion.ToString() } else { "Unknown" }
-$psEdition = if ($PSVersionTable.PSEdition) { $PSVersionTable.PSEdition } else { "Desktop" }
+$psEd = if ($PSVersionTable.PSEdition) { $PSVersionTable.PSEdition } else { "Desktop" }
 Write-Host "****************************************************" -ForegroundColor Cyan
-Write-Host "* PowerShell Version: $psVer ($psEdition)" -ForegroundColor Cyan
+Write-Host "* PowerShell Version: $psVer ($psEd)" -ForegroundColor Cyan
 Write-Host "****************************************************" -ForegroundColor Cyan
 Write-Host ""
 
