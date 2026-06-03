@@ -20,18 +20,30 @@
         $script:MaxPathLength, $script:LongPathPrefix
 #>
 
-# CRITICAL FIX for environment where PSScriptRoot and MyInvocation are empty
-$ScriptRoot = $PWD.Path  # Final fallback - use current directory
+# Version detection - robust fallback for environments where $PSScriptRoot is unavailable
+$ScriptRoot = $PSScriptRoot
+if (-not $ScriptRoot) { $ScriptRoot = $MyInvocation.PSScriptRoot }
+if (-not $ScriptRoot) { $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
+if (-not $ScriptRoot) { $ScriptRoot = $PWD.Path }
 
-# Determine if we are running PowerShell 7+
-$isPS7 = $PSVersionTable.PSEdition -eq 'Core' -or ($PSVersionTable.PSVersion.Major -ge 6)
-
-if (-not $isPS7) {
+# PS7+ detection (PSEdition is the most reliable signal)
+if ($PSVersionTable.PSEdition -ne 'Core' -and $PSVersionTable.PSVersion.Major -lt 6) {
     $pwsh51Common = Join-Path $ScriptRoot "pwsh51" "_Common.ps1"
     if (Test-Path -LiteralPath $pwsh51Common) {
         . $pwsh51Common
         return
     }
+}
+
+# Display clear PowerShell version banner (only if not already shown by main script)
+if (-not (Get-Variable -Name "FixInheritanceBannerShown" -ErrorAction SilentlyContinue)) {
+    $psVer = if ($PSVersionTable.PSVersion) { $PSVersionTable.PSVersion.ToString() } else { "Unknown" }
+    $psEdition = if ($PSVersionTable.PSEdition) { $PSVersionTable.PSEdition } else { "Desktop" }
+    Write-Host "****************************************************" -ForegroundColor Cyan
+    Write-Host "* PowerShell Version: $psVer ($psEdition)" -ForegroundColor Cyan
+    Write-Host "****************************************************" -ForegroundColor Cyan
+    Write-Host ""
+    Set-Variable -Name "FixInheritanceBannerShown" -Value $true -Scope Script
 }
 
 #region Constants
