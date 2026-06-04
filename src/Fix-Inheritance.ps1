@@ -46,7 +46,7 @@ if (-not $ScriptRoot) { $ScriptRoot = $PWD.Path }
 
 # PS7+ detection (PSEdition is the most reliable signal)
 if ($PSVersionTable.PSEdition -ne 'Core' -and $PSVersionTable.PSVersion.Major -lt 6) {
-    $pwsh51Script = Join-Path $ScriptRoot "pwsh51" "Fix-Inheritance.ps1"
+    $pwsh51Script = Join-Path $ScriptRoot -AdditionalChild "pwsh51", "Fix-Inheritance.ps1"
     if (Test-Path -LiteralPath $pwsh51Script) {
         if ($MyInvocation.InvocationName -eq '.') {
             . $pwsh51Script @PSBoundParameters
@@ -114,28 +114,27 @@ function Invoke-FixInheritance {
         $combined = "$($r.Output)`n$($r.Error)"
         $lines = $combined -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
         
-        $summaryLine = $null
-        foreach ($line in $lines) {
-            # Skip and record summary line (usually contains numbers and processed/failed info)
-            if ($line -match 'processed.*files' -or $line -match '\d+.*?\d+') {
-                if ($line -notmatch '^((?:[a-zA-Z]:|\\\\).*?):\s+') {
-                    $summaryLine = $line
-                    continue
-                }
-            }
-            
-            # Parse the icacls error format: "Path: Error message"
-            if ($line -match '^((?:[a-zA-Z]:|\\\\).*?):\s+(.*)$') {
-                $failPath = $Matches[1].Trim()
-                $failReason = $Matches[2].Trim()
-                Add-Failure -FullPath $failPath -ErrorReason $failReason -FailedItems $failedItems
-                $failedCount++
-            } else {
-                # Unrecognized error format
-                Add-Failure -FullPath $TargetPath -ErrorReason "icacls output: $line" -FailedItems $failedItems
-                $failedCount++
-            }
-        }
+         $summaryLine = $null
+         foreach ($line in $lines) {
+             # Parse the icacls error format: "Path: Error message"
+             if ($line -match '^((?:[a-zA-Z]:|\\\\).*?):\s+(.*)$') {
+                 $failPath = $Matches[1].Trim()
+                 $rawReason = $Matches[2].Trim()
+                 # Normalize the raw icacls message into a categorized error reason
+                 $failReason = Get-ErrorReason -ExitCode 0 -ErrorOutput $rawReason
+                 Add-Failure -FullPath $failPath -ErrorReason $failReason -FailedItems $failedItems
+                 $failedCount++
+             } else {
+                 # Check if this line is the summary line (processed files, or contains numbers)
+                 if ($line -match 'processed.*files' -or $line -match '\d+.*?\d+') {
+                     $summaryLine = $line
+                 } else {
+                     # Unrecognized error format
+                     Add-Failure -FullPath $TargetPath -ErrorReason "icacls output: $line" -FailedItems $failedItems
+                     $failedCount++
+                 }
+             }
+         }
         
         if ($r.ExitCode -ne 0 -and $failedCount -eq 0) {
             Add-Failure -FullPath $TargetPath `

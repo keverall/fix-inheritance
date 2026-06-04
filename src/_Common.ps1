@@ -28,7 +28,7 @@ if (-not $ScriptRoot) { $ScriptRoot = $PWD.Path }
 
 # PS7+ detection (PSEdition is the most reliable signal)
 if ($PSVersionTable.PSEdition -ne 'Core' -and $PSVersionTable.PSVersion.Major -lt 6) {
-    $pwsh51Common = Join-Path $ScriptRoot "pwsh51" "_Common.ps1"
+    $pwsh51Common = Join-Path $ScriptRoot -AdditionalChild "pwsh51", "_Common.ps1"
     if (Test-Path -LiteralPath $pwsh51Common) {
         . $pwsh51Common
         return
@@ -95,19 +95,45 @@ function Get-ErrorReason {
         [int]$ExitCode,
         [string]$ErrorOutput = ''
     )
+    # Exit code mapping (locale-independent)
     switch ($ExitCode) {
         5   { return 'Access Denied - requires ownership change' }
         32  { return 'File in use' }
         2   { return 'File not found' }
-        3   { return 'File not found' }
+        3   { return 'Path not found' }
         206 { return 'Path too long' }
         87  { return 'Invalid path or filename' }
+        1314 { return 'Insufficient privileges' }
         default {
-            if ($ErrorOutput -match 'Access is denied') { return 'Access Denied - requires ownership change' }
-            if ($ErrorOutput -match 'is in use|being used by another process') { return 'File in use' }
-            if ($ErrorOutput -match 'path not found|The system cannot find the path') { return 'File not found' }
-            if ($ErrorOutput -match 'filename or extension is too long|too long') { return 'Path too long' }
-            if ($ErrorOutput -match 'invalid|syntax is incorrect') { return 'Invalid path or filename' }
+            # Pattern matching on error message text
+            # Access/permission errors
+            if ($ErrorOutput -match 'Access is denied|access to the path is denied|denied|access denied') { return 'Access Denied - requires ownership change' }
+            if ($ErrorOutput -match 'privileges|privilege|not all privileges|required privileges not held') { return 'Insufficient privileges' }
+            if ($ErrorOutput -match 'not recognized as an internal or external command') { return 'icacls not found - not a valid path or command' }
+            
+            # File locking errors
+            if ($ErrorOutput -match 'being used by another process|is in use|process cannot access|file is being used by|cannot access.*used by|sharing violation') { return 'File in use' }
+            
+            # File/path not found errors
+            if ($ErrorOutput -match 'cannot find the path|path not found|directory name is invalid') { return 'Path not found' }
+            if ($ErrorOutput -match 'cannot find the file|file not found|could not find|not exist') { return 'File not found' }
+            
+            # Path length errors
+            if ($ErrorOutput -match 'filename or extension is too long|target file.*name is too long|path too long|exceeds the maximum supported|The specified path.*too long') { return 'Path too long' }
+            
+            # Invalid name/character errors
+            if ($ErrorOutput -match 'invalid|syntax is incorrect|invalid character|name is not valid|contains invalid characters|illegal') { return 'Invalid path or filename' }
+            
+            # Ownership/permissions reset failures
+            if ($ErrorOutput -match 'Failed to reset|reset settings|failed to process|error processing') { return 'Failed to reset ACL' }
+            
+            # Read-only / attribute errors
+            if ($ErrorOutput -match 'read.?only|attribute|file attribute') { return 'File attribute prevents operation' }
+            
+            # Disk / I/O errors
+            if ($ErrorOutput -match 'I/O error|disk|media|corrupt|unreadable') { return 'Disk or I/O error' }
+            
+            # Fallback
             return "Unknown error (exit code: $ExitCode)"
         }
     }
