@@ -187,7 +187,7 @@ Describe "Fix-Inheritance integration tests" {
         $rows | Where-Object { $_.FileName -in 'a.txt', 'b.txt' } | Measure-Object | Select-Object -ExpandProperty Count | Should -Be 2
     }
 
-    It "Continues processing after enumeration errors" {
+    It "Continues processing after access denied errors" {
         $locked = Join-Path $script:root 'locked'
         New-Item -ItemType Directory -Path $locked -Force | Out-Null
         New-Item -ItemType File -Path (Join-Path $locked 'secret.txt') -Force | Out-Null
@@ -201,10 +201,9 @@ Describe "Fix-Inheritance integration tests" {
 
         $rows = Import-Csv -Path $csv
         ($rows | Measure-Object).Count | Should -BeGreaterThan 0
-        $enumErrors = @($rows | Where-Object { $_.ErrorReason -eq 'Cannot enumerate (likely access denied or path error)' })
-        $enumErrors.Count | Should -BeGreaterThan 0
-        $processable = @($rows | Where-Object { $_.ErrorReason -notlike 'Cannot enumerate*' })
-        $processable.Count | Should -BeGreaterThan 0
+        # The locked folder should appear in the failure list (icacls will fail to access it)
+        $lockedErrors = @($rows | Where-Object { $_.FilePath -like '*locked*' -or $_.ParentFolder -like '*locked*' })
+        $lockedErrors.Count | Should -BeGreaterThan 0
 
         chmod 755 $locked 2>$null
     }
@@ -277,7 +276,7 @@ Describe "Fix-Inheritance integration tests" {
         Test-Path $log | Should -Be $true
     }
 
-    It "Writes enumeration errors under the summary" {
+    It "Writes error breakdown under the summary" {
         $locked = Join-Path $script:root 'forbidden'
         New-Item -ItemType Directory -Path $locked -Force | Out-Null
         $null = chmod 000 $locked 2>$null
@@ -285,9 +284,9 @@ Describe "Fix-Inheritance integration tests" {
         $log = Join-Path $script:root 'out.log'
         Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log
         chmod 755 $locked 2>$null
-        # The log should mention the enumeration error count
+        # The log should mention error breakdown
         $logContent = Get-Content $log -Raw
-        $logContent | Should -Match 'enumeration'
+        $logContent | Should -Match 'Error breakdown'
     }
 
     It "Does not stop on a file that throws during per-item icacls" {

@@ -3,21 +3,16 @@
     Fixes inheritance on all files and subfolders, logging failures to CSV.
 
 .DESCRIPTION
-    Runs icacls inheritance:e /T on a target path, captures per-item failures
-    and writes them to a CSV that can be fed to Take-Ownership.ps1 for recovery.
+    Runs icacls inheritance:e /T /C /Q on a target path, parses the output
+    for failures, and writes them to a CSV that can be fed to Take-Ownership.ps1
+    for recovery.
 
-      * NEVER stops on a single file failure - the per-item loop continues
-        on every error and records it.
-      * Files that fail to enumerate (access denied, lock, bad path) are
-        captured via -ErrorVariable and recorded in the failure CSV.
-      * All special characters in filenames are passed to icacls verbatim.
-        On PowerShell 7+ this uses ProcessStartInfo.ArgumentList; on
-        Windows PowerShell 5.1 it falls back to a manually-quoted
-        Arguments string (see Invoke-NativeCommand for the rationale).
-      * Paths longer than Windows MAX_PATH (260) are passed with the
-        \\?\ long-path prefix that icacls requires.
-      * Export-Csv handles CSV escaping of commas, quotes, and newlines
-        in filenames.
+      * Uses a single bulk icacls operation for performance (minutes instead of weeks).
+      * The /Q (quiet) flag suppresses success messages so only failures are parsed.
+      * All failures from icacls output are captured and recorded in the failure CSV.
+      * Paths longer than Windows MAX_PATH (260) are passed with the \\?\ long-path
+        prefix that icacls requires.
+      * Export-Csv handles CSV escaping of commas, quotes, and newlines in filenames.
       * Exit code (HRESULT) is the primary signal for error classification,
         so behaviour is identical on non-English Windows installations.
 
@@ -136,16 +131,20 @@ function Invoke-FixInheritance {
     }
 
     Write-Section 'Summary'
+    Write-Status "Total failed items:     $failedCount"
     if ($summaryLine) {
-        Write-Status "icacls result:          $summaryLine"
+        Write-Status "icacls summary:         $summaryLine"
     }
-    Write-Status "Parsed failed items:    $failedCount"
     Write-Status "CSV:                    $OutputCsv"
-
+    
     if ($failedCount -gt 0) {
         Write-Status 'Error breakdown:'
-        $failedItems | Group-Object ErrorReason | Sort-Object Count -Descending | Format-Table Count, Name -AutoSize
+        $failedItems | Group-Object ErrorReason | Sort-Object Count -Descending | ForEach-Object {
+            Write-Status "  - $($_.Count) x $($_.Name)"
+        }
         Write-Status 'Use Take-Ownership.ps1 to fix failed items.'
+    } else {
+        Write-Status 'No failures detected - inheritance successfully applied to all items.'
     }
 
     Write-Status 'Done.'
