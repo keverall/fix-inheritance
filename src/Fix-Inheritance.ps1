@@ -108,52 +108,45 @@ function Invoke-FixInheritance {
 
     $failedItems  = [System.Collections.Generic.List[object]]::new()
     $failedCount  = 0
-    $enumErrors   = $null
+
+    Write-Status 'Running bulk icacls operation on target path...'
     try {
-        $allItems = Get-ChildItem -LiteralPath $TargetPath -Recurse -Force `
-            -ErrorAction Continue -ErrorVariable enumErrors
-    } catch {
-        Write-Status "Error enumerating path: $_" -Level 'WARNING'
-        if (-not $allItems) { $allItems = @() }
-        if (-not $enumErrors) {
+        $longPathArg = Get-LongPath $TargetPath
+        
+        # /Q suppresses success messages so we only get failures and the summary line
+        $r = Invoke-NativeCommand -FileName 'icacls.exe' -Arguments @($longPathArg, '/inheritance:e', '/T', '/C', '/Q') -ThrowOnError
+        
+        $combined = "$($r.Output)`n$($r.Error)"
+        $lines = $combined -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+        
+        $summaryLine = $null
+        foreach ($line in $lines) {
+            # Skip and record summary line (usually contains numbers and processed/failed info)
+            if ($line -match 'processed.*files' -or $line -match '\d+.*?\d+') {
+                if ($line -notmatch '^((?:[a-zA-Z]:|\\\\).*?):\s+') {
+                    $summaryLine = $line
+                    continue
+                }
+            }
+            
+            # Parse the icacls error format: "Path: Error message"
+            if ($line -match '^((?:[a-zA-Z]:|\\\\).*?):\s+(.*)$') {
+                $failPath = $Matches[1].Trim()
+                $failReason = $Matches[2].Trim()
+                Add-Failure -FullPath $failPath -ErrorReason $failReason -FailedItems $failedItems
+                $failedCount++
+            } else {
+                # Unrecognized error format
+                Add-Failure -FullPath $TargetPath -ErrorReason "icacls output: $line" -FailedItems $failedItems
+                $failedCount++
+            }
+        }
+        
+        if ($r.ExitCode -ne 0 -and $failedCount -eq 0) {
             Add-Failure -FullPath $TargetPath `
-                -ErrorReason "Cannot enumerate (likely access denied or path error): $($_.Exception.Message)" `
+                -ErrorReason "icacls failed with exit code $($r.ExitCode) but no specific file errors were parsed." `
                 -FailedItems $failedItems
             $failedCount++
-            Write-Status "Recorded terminating enumeration error against target path." -Level 'WARNING'
-        }
-    }
-
-    if ($enumErrors) {
-        foreach ($err in $enumErrors) {
-            $p = Get-ErrorRecordPath -Record $err
-            if (-not $p) { $p = $TargetPath }
-            Add-Failure -FullPath $p -ErrorReason "Cannot enumerate (likely access denied or path error)" -FailedItems $failedItems
-            $failedCount++
-        }
-        Write-Status "Captured $(@($enumErrors).Count) enumeration error(s) into the failure list." -Level 'WARNING'
-    }
-
-    $totalItems   = ($allItems | Measure-Object).Count
-    $actualFileCount = @($allItems | Where-Object { -not $_.PSIsContainer }).Count
-    $folderCount     = @($allItems | Where-Object { $_.PSIsContainer }).Count
-    $processedCount  = 0
-    $filesProcessed  = 0
-    $foldersProcessed = 0
-    Write-Status "Found $totalItems enumerable items (Files: $actualFileCount, Folders: $folderCount) plus $failedCount items that failed enumeration"
-
-    Write-Status 'Attempting bulk icacls operation on root...'
-    try {
-        $r = Invoke-NativeCommand -FileName 'icacls.exe' -Arguments @((Get-LongPath (Join-Path $TargetPath "*.*")), '/inheritance:e', '/T', '/C') -ThrowOnError
-        if ($r.ExitCode -ne 0) {
-            $combined = "$($r.Output)`n$($r.Error)"
-            Add-Failure -FullPath $TargetPath `
-                -ErrorReason (Get-ErrorReason -ExitCode $r.ExitCode -ErrorOutput $combined) `
-                -FailedItems $failedItems
-            $failedCount++
-            Write-Status "Bulk icacls failed (exit code $($r.ExitCode)); recorded against target path." -Level 'WARNING'
-        } else {
-            Write-Status "Bulk operation finished (exit code 0). Per-item verification will identify exact failures."
         }
     } catch {
         Write-Status "Bulk operation failed: $_" -Level 'WARNING'
@@ -163,31 +156,6 @@ function Invoke-FixInheritance {
         $failedCount++
     }
 
-    Write-Status 'Processing items individually to identify failures (continues on all errors)...'
-
-    foreach ($item in $allItems) {
-        $processedCount++
-        try {
-            if ($item.PSIsContainer) { $foldersProcessed++ } else { $filesProcessed++ }
-            $fullPath = $item.FullName
-
-            if ($processedCount % 100 -eq 0) {
-                Write-Status "Progress: Processed $processedCount / $totalItems (Files: $filesProcessed/$actualFileCount, Folders: $foldersProcessed/$folderCount, Failures: $failedCount)"
-            }
-
-            $r = Invoke-NativeCommand -FileName 'icacls.exe' -Arguments @((Get-LongPath $fullPath), '/inheritance:e', '/C') -ThrowOnError
-            if ($r.ExitCode -ne 0) {
-                $combined = "$($r.Output)`n$($r.Error)"
-                Add-Failure -FullPath $fullPath -ErrorReason (Get-ErrorReason -ExitCode $r.ExitCode -ErrorOutput $combined) -FailedItems $failedItems
-                $failedCount++
-            }
-        } catch {
-            $fp = if ($item -and $item.FullName) { $item.FullName } else { $TargetPath }
-            Add-Failure -FullPath $fp -ErrorReason "Exception: $($_.Exception.Message)" -FailedItems $failedItems
-            $failedCount++
-        }
-    }
-
     try {
         Write-FailureCsv -FailedItems $failedItems -OutputCsv $OutputCsv
     } catch {
@@ -195,32 +163,12 @@ function Invoke-FixInheritance {
         Write-Error $_
     }
 
-    $enumErrorCount = @($enumErrors).Count
     Write-Section 'Summary'
-    Write-Status "Items discovered:       $totalItems"
-    Write-Status "  - Files:              $actualFileCount"
-    Write-Status "  - Folders:            $folderCount"
-    Write-Status "Items processed:        $processedCount"
-    Write-Status "  - Files processed:    $filesProcessed"
-    Write-Status "  - Folders processed:  $foldersProcessed"
-    Write-Status "Failed items:           $failedCount"
-    Write-Status "  - Enumeration errors: $enumErrorCount"
-    Write-Status "  - Per-item errors:    $($failedCount - $enumErrorCount)"
+    if ($summaryLine) {
+        Write-Status "icacls result:          $summaryLine"
+    }
+    Write-Status "Parsed failed items:    $failedCount"
     Write-Status "CSV:                    $OutputCsv"
-
-    $countMismatch = $false
-    if ($actualFileCount -ne $filesProcessed) {
-        Write-Status "*** COUNT MISMATCH: Actual file count ($actualFileCount) does not match files processed ($filesProcessed) ***" -Level 'WARNING'
-        $countMismatch = $true
-    }
-    if ($folderCount -ne $foldersProcessed) {
-        Write-Status "*** COUNT MISMATCH: Actual folder count ($folderCount) does not match folders processed ($foldersProcessed) ***" -Level 'WARNING'
-        $countMismatch = $true
-    }
-    if (($actualFileCount + $folderCount) -ne $processedCount) {
-        Write-Status "*** COUNT MISMATCH: Total discovered ($($actualFileCount + $folderCount)) does not match total processed ($processedCount) ***" -Level 'WARNING'
-        $countMismatch = $true
-    }
 
     if ($failedCount -gt 0) {
         Write-Status 'Error breakdown:'
@@ -229,12 +177,12 @@ function Invoke-FixInheritance {
     }
 
     Write-Status 'Done.'
-    return $countMismatch
+    return ($failedCount -gt 0)
 }
 
 if ($MyInvocation.InvocationName -ne '.') {
     $scriptErrors = $null
-    $countMismatch = Invoke-FixInheritance @PSBoundParameters -ErrorVariable scriptErrors
+    $hasFailures = Invoke-FixInheritance @PSBoundParameters -ErrorVariable scriptErrors
     if ($scriptErrors) { exit 1 }
-    if ($countMismatch) { exit 2 }
+    if ($hasFailures) { exit 2 }
 }
