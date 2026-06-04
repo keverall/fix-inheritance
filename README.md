@@ -197,41 +197,65 @@ Comprehensive Pester test suite validates the scripts end-to-end:
 Invoke-Pester -Path Tests/
 ```
 
-### Windows Container Testing (WinBoat)
+## Processing Summary - Gemini Pro Latest code review -
 
-Tests can be run against a Windows container running in WinBoat (Docker) on CachyOS/Linux:
+Based on my review of the current code, here's what I found:
 
-1. Start a Windows container with PowerShell:
-   ```bash
-   docker run -d --name win-test -p 5985:5985 mcr.microsoft.com/windows/servercore:ltsc2022
-   ```
+## 1. Does Fix-Inheritance.ps1 fix all inheritance issues with icacls?
 
-2. Mount the repo inside the container at `C:\Users\keverall\repos\fix-inheritance`
+**YES**, the Fix-Inheritance.ps1 script is designed to fix inheritance on **ALL** files and subfolders under the target path. It accomplishes this through:
 
-3. Run the WinBoat tests:
-   ```bash
-   pwsh ./Tests/WinBoat.Tests.ps1
-   ```
+- **Single bulk operation**: `icacls.exe /inheritance:e /T /C /Q`
+  - `/inheritance:e` - Enables inheritance
+  - `/T` - Processes all subdirectories and files recursively
+  - `/C` - **Crucially**: Continues on errors (doesn't stop when encountering access denied or other errors)
+  - `/Q` - Quiet mode (suppresses success messages to only capture failures in output)
 
-**Note:** The dockur/windows image doesn't support `docker exec` with PowerShell. Use a full Windows container like `mcr.microsoft.com/windows/servercore:ltsc2022` for testing.
+- **Robust error handling**: 
+  - Parses icacls output to identify specific failed files
+  - Handles long paths (>260 chars) with `\\?\` prefix
+  - Works on both PowerShell 7+ and Windows PowerShell 5.1
+  - Properly handles special characters in filenames
+  - Uses exit codes (HRESULT) for language-independent error classification
 
-### Manual Windows Testing
+The `/C` flag ensures icacls processes the entire tree, logging only the failures - not stopping on the first error. This is much more efficient than the previous per-file approach while still capturing all issues.
 
-For comprehensive testing on Windows:
+## 2. Are exceptions handled by Take-Ownership.ps1 processing the CSV?
 
-1. Setup test data (run as Administrator):
-   ```powershell
-   .\Tests\TestData\Setup-WindowsTestData.ps1
-   ```
+**YES**, the Take-Ownership.ps1 script properly processes the exceptions CSV:
 
-2. Run fix-inheritance:
-   ```powershell
-   .\Tests\TestData\Run-FixInheritanceTests.ps1
-   ```
+For each file in the CSV:
 
-This creates test files with:
-- Special character filenames (spaces, commas, quotes, etc.)
-- Deep directory structures
-- Long paths (> 260 characters)
-- Protected files (access denied)
-- Files in protected folders (enumeration errors)
+1. **Takes ownership**: `takeown.exe /f <file> /A` (gives to Administrators)
+2. **Re-applies inheritance**: `icacls.exe <file> /inheritance:e /C`
+3. **Continues on all errors**: Processes every file regardless of individual failures
+4. **Detailed results**: Outputs a CSV showing:
+   - Successfully fixed files
+   - Files that still failed (with reasons: takeown failed, icacls failed after takeown, or exceptions)
+   - Original error from Fix-Inheritance.ps1 for reference
+
+**Key robustness features**:
+
+- Try/catch blocks around each file's processing
+- Continues to next file even if current file throws exception
+- Same long-path handling (`\\?\` prefix) as Fix-Inheritance.ps1
+- Works correctly in both PowerShell versions
+- Properly handles special characters in filenames
+
+## The Complete Workflow
+
+1. **Run Fix-Inheritance.ps1**:
+
+
+   - .\Fix-Inheritance.ps1 -TargetPath X:\ -OutputPath .\output\FailedInheritance.csv
+   - Attempts to fix inheritance everywhere
+   - Produces CSV with all files that couldn't inherit
+
+2. **Run Take-Ownership.ps1**:
+
+   - .\Take-Ownership.ps1 -CsvPath .\output\FailedInheritance.csv
+   - Takes ownership of each failed file
+   - Attempts to fix inheritance again
+   - Produces results CSV showing what was fixed vs what still needs manual attention
+
+This two-step process efficiently resolves most inheritance issues (typically ownership-related) while providing detailed logs for any remaining problems requiring manual investigation. Neither script stops processing when encountering individual file errors - they continue through the entire dataset.
