@@ -177,8 +177,8 @@ function Invoke-NativeCommand {
         $psi.UseShellExecute = $false
         $psi.RedirectStandardOutput = $true
         $psi.RedirectStandardError  = $true
-        $psi.StandardOutputEncoding = [System.Text.Encoding]::Unicode
-        $psi.StandardErrorEncoding  = [System.Text.Encoding]::Unicode
+        $psi.StandardOutputEncoding = [System.Text.Encoding]::Default
+        $psi.StandardErrorEncoding  = [System.Text.Encoding]::Default
 
         $hasArgList = $null -ne ([System.Diagnostics.ProcessStartInfo].GetProperty('ArgumentList'))
         if ($hasArgList) {
