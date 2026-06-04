@@ -144,7 +144,7 @@ function Invoke-FixInheritance {
 
     Write-Status 'Attempting bulk icacls operation on root...'
     try {
-        $r = Invoke-NativeCommand -FileName 'icacls.exe' -Arguments @((Get-LongPath $TargetPath), '/inheritance:e', '/T', '/C') -ThrowOnError
+        $r = Invoke-NativeCommand -FileName 'icacls.exe' -Arguments @((Get-LongPath (Join-Path $TargetPath "*.*")), '/inheritance:e', '/T', '/C') -ThrowOnError
         if ($r.ExitCode -ne 0) {
             $combined = "$($r.Output)`n$($r.Error)"
             Add-Failure -FullPath $TargetPath `
