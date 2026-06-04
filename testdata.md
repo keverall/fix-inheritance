@@ -42,43 +42,38 @@ Set-AdministratorDeniedInheritance -Path "S:\fix-inheritance-tests\mybadfolder"
 Re-run the setup script to regenerate the test tree with the new reliable denial pattern.
 
 
- main  .\src\Fix-Inheritance.ps1 -TargetPath "C:\tests"                                                                      0  13:09:04 
-WriteError: C:\Users\98253\repos\fix-inheritance\src\Fix-Inheritance.ps1:68
-Line |
-  68 |  …  = if ($PSVersionTable.PSEdition) { $PSVersionTable.PSEdition } else  …
-     |                                        ~~~~~~~~~~~~~~~~~~~~~~~~~
-     | Cannot overwrite variable PSEdition because it is read-only or constant.
+
+ .\src\Fix-Inheritance.ps1 -TargetPath "R:\R_VS13_D2\ftcREGFIN\CECIL\2011 Checking  Sheet\1. Feb 2011"
+Join-Path : A positional parameter cannot be found that accepts argument 'Fix-Inheritance.ps1'.
+At T:\KevinE\KevsProducts\fix-inheritance\src\Fix-Inheritance.ps1:49 char:21
++ ...  $pwsh51Script = Join-Path $ScriptRoot "pwsh51" "Fix-Inheritance.ps1"
++                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Join-Path], ParameterBindingException
+    + FullyQualifiedErrorId : PositionalParameterNotFound,Microsoft.PowerShell.Commands.JoinPathCommand
+
+Test-Path : Cannot bind argument to parameter 'LiteralPath' because it is null.
+At T:\KevinE\KevsProducts\fix-inheritance\src\Fix-Inheritance.ps1:50 char:32
++     if (Test-Path -LiteralPath $pwsh51Script) {
++                                ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidData: (:) [Test-Path], ParameterBindingValidationException
+    + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Commands.TestPathCom
+   mand
+
 ****************************************************
-* PowerShell Version: 7.6.2 (Core)
+* PowerShell Version: 5.1.17763.8641 (Desktop)
 ****************************************************
 
-WriteError: C:\Users\98253\repos\fix-inheritance\src\_Common.ps1:41
-Line |
-  41 |  …  = if ($PSVersionTable.PSEdition) { $PSVersionTable.PSEdition } else  …
-     |                                        ~~~~~~~~~~~~~~~~~~~~~~~~~
-     | Cannot overwrite variable PSEdition because it is read-only or constant.
-****************************************************
-* PowerShell Version: 7.6.2 (Core)
-****************************************************
+Join-Path : A positional parameter cannot be found that accepts argument '_Common.ps1'.
+At T:\KevinE\KevsProducts\fix-inheritance\src\_Common.ps1:31 char:21
++     $pwsh51Common = Join-Path $ScriptRoot "pwsh51" "_Common.ps1"
++                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Join-Path], ParameterBindingException
+    + FullyQualifiedErrorId : PositionalParameterNotFound,Microsoft.PowerShell.Commands.JoinPathCommand
 
-Starting inheritance fix on: C:\tests
-Output CSV:   C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
-Log file:     C:\Users\98253\repos\fix-inheritance\logs\FailedInheritance.log
-Found 7 enumerable items (Files: 6, Folders: 1) plus 0 items that failed enumeration
-Attempting bulk icacls operation on root...
-Bulk operation finished (exit code 0). Per-item verification will identify exact failures.
-Processing items individually to identify failures (continues on all errors)...
-==========================================
-Summary
-==========================================
-Items discovered:       7
-  - Files:              6
-  - Folders:            1
-Items processed:        7
-  - Files processed:    6
-  - Folders processed:  1
-Failed items:           0
-  - Enumeration errors: 0
-  - Per-item errors:    0
-CSV:                    C:\Users\98253\repos\fix-inheritance\output\FailedInheritance.csv
-Done.
+Test-Path : Cannot bind argument to parameter 'LiteralPath' because it is null.
+At T:\KevinE\KevsProducts\fix-inheritance\src\_Common.ps1:32 char:32
++     if (Test-Path -LiteralPath $pwsh51Common) {
++                                ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidData: (:) [Test-Path], ParameterBindingValidationException
+    + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Commands.TestPathCom
+   mand
