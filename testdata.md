@@ -77,3 +77,66 @@ At T:\KevinE\KevsProducts\fix-inheritance\src\_Common.ps1:32 char:32
     + CategoryInfo          : InvalidData: (:) [Test-Path], ParameterBindingValidationException
     + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Commands.TestPathCom
    mand
+
+
+
+
+
+
+
+
+   .\src\Fix-Inheritance.ps1 -TargetPath "R:\R_VS13_D2\ftcREGFIN\CECIL\2011 Checking  Sheet\1. Feb 2011"
+Join-Path : A parameter cannot be found that matches parameter name 'AdditionalChild'.
+At T:\KevinE\KevsProducts\fix-inheritance\src\Fix-Inheritance.ps1:49 char:43
++     $pwsh51Script = Join-Path $ScriptRoot -AdditionalChild "pwsh51",  ...
++                                           ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Join-Path], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.JoinPathCommand
+
+Test-Path : Cannot bind argument to parameter 'LiteralPath' because it is null.
+At T:\KevinE\KevsProducts\fix-inheritance\src\Fix-Inheritance.ps1:50 char:32
++     if (Test-Path -LiteralPath $pwsh51Script) {
++                                ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidData: (:) [Test-Path], ParameterBindingValidationException
+    + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Commands.TestPathCom
+   mand
+
+****************************************************
+* PowerShell Version: 5.1.17763.8641 (Desktop)
+****************************************************
+
+Join-Path : A parameter cannot be found that matches parameter name 'AdditionalChild'.
+At T:\KevinE\KevsProducts\fix-inheritance\src\_Common.ps1:31 char:43
++     $pwsh51Common = Join-Path $ScriptRoot -AdditionalChild "pwsh51",  ...
++                                           ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Join-Path], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.JoinPathCommand
+
+Test-Path : Cannot bind argument to parameter 'LiteralPath' because it is null.
+At T:\KevinE\KevsProducts\fix-inheritance\src\_Common.ps1:32 char:32
++     if (Test-Path -LiteralPath $pwsh51Common) {
++                                ~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidData: (:) [Test-Path], ParameterBindingValidationException
+    + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Commands.TestPathCom
+   mand
+
+****************************************************
+* PowerShell Version: 5.1.17763.8641 (Desktop)
+****************************************************
+
+Output file already exists and will be overwritten: T:\KevinE\KevsProducts\fix-inheritance\output\FailedInheritance.csv
+Starting inheritance fix on: R:\R_VS13_D2\ftcREGFIN\CECIL\2011 Checking  Sheet\1. Feb 2011
+Output CSV:   T:\KevinE\KevsProducts\fix-inheritance\output\FailedInheritance.csv
+Log file:     T:\KevinE\KevsProducts\fix-inheritance\logs\FailedInheritance.log
+Running bulk icacls operation on target path...
+==========================================
+Summary
+==========================================
+Total failed items:     32
+icacls summary:         Successfully processed 0 files; Failed processing 32 files
+CSV:                    T:\KevinE\KevsProducts\fix-inheritance\output\FailedInheritance.csv
+Error breakdown:
+  - 32 x Access Denied - requires ownership change
+Use Take-Ownership.ps1 to fix failed items.
+Done.
+PS T:\KevinE\KevsProducts\fix-inheritance>
