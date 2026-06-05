@@ -165,6 +165,21 @@ Each run creates a log file:
 
 The scripts support both Windows PowerShell 5.1 and PowerShell 7+. When run on PowerShell 5.1, the scripts automatically route to version-specific implementations in `src/pwsh51/` that avoid PS 7+ language features.
 
+### Running Scripts in Locked-Down Environments
+
+If you get "script cannot be loaded" errors due to execution policy, use:
+
+```powershell
+# Recommended - bypass for this invocation only
+powershell -ExecutionPolicy Bypass -File .\src\Fix-Inheritance.ps1 -TargetPath "R:\data"
+
+# Or from PowerShell prompt
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+.\src\Fix-Inheritance.ps1 -TargetPath "R:\data"
+```
+
+This only affects the current process/session and doesn't require permanent policy changes.
+
 ### Windows Container Testing (WinBoat)
 
 Tests can be run against a Windows container running in WinBoat (Docker) on CachyOS/Linux:

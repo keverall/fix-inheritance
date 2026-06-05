@@ -23,7 +23,15 @@
     Path for the output CSV file. Default: ./output/FailedInheritance.csv
 
 .PARAMETER LogPath
-    Path for the log file. Default: ./logs/FailedInheritance.log (independent of OutputPath)
+    Path for the log file. Default: same directory as OutputPath with .log extension
+
+.EXAMPLE
+    # Run with execution policy bypass (recommended for locked-down environments)
+    powershell -ExecutionPolicy Bypass -File .\src\Fix-Inheritance.ps1 -TargetPath "R:\data"
+
+.EXAMPLE
+    # Or from an elevated PowerShell prompt
+    .\src\Fix-Inheritance.ps1 -TargetPath "R:\data"
 #>
 
 [CmdletBinding()]
