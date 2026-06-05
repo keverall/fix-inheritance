@@ -47,7 +47,7 @@ param(
 )
 
 if ($PSVersionTable.PSVersion.Major -lt 7) {
-    $pwsh51Script = Join-Path $PSScriptRoot "pwsh51" "Take-Ownership.ps1"
+    $pwsh51Script = [System.IO.Path]::Combine($PSScriptRoot, "pwsh51", "Take-Ownership.ps1")
     if (Test-Path $pwsh51Script) {
         if ($MyInvocation.InvocationName -eq '.') {
             . $pwsh51Script @PSBoundParameters

@@ -28,7 +28,7 @@ if (-not $ScriptRoot) { $ScriptRoot = $PWD.Path }
 
 # PS7+ detection (PSEdition is the most reliable signal)
 if ($PSVersionTable.PSEdition -ne 'Core' -and $PSVersionTable.PSVersion.Major -lt 6) {
-    $pwsh51Common = Join-Path $ScriptRoot "pwsh51" "_Common.ps1"
+    $pwsh51Common = [System.IO.Path]::Combine($ScriptRoot, "pwsh51", "_Common.ps1")
     if (Test-Path -LiteralPath $pwsh51Common) {
         . $pwsh51Common
         return
