@@ -77,7 +77,7 @@ function Invoke-FixInheritance {
     )
 
     $repoRoot = Split-Path $ScriptRoot -Parent
-    if (-not $OutputPath) { $OutputPath = Join-Path $repoRoot 'output/FailedInheritance.csv' }
+    if (-not $OutputPath) { $OutputPath = [System.IO.Path]::Combine($repoRoot, 'output', 'FailedInheritance.csv') }
     if (-not $OutputPath.ToLower().EndsWith('.csv')) { $OutputPath = $OutputPath + '.csv' }
     if (-not $LogPath) { $LogPath = [System.IO.Path]::ChangeExtension($OutputPath, '.log') }
 
