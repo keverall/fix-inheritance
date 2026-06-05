@@ -59,6 +59,18 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
     }
 }
 
+# Display clear PowerShell version banner
+$psVer = if ($PSVersionTable.PSVersion) { $PSVersionTable.PSVersion.ToString() } else { "Unknown" }
+$psEd = if ($PSVersionTable.PSEdition) { $PSVersionTable.PSEdition } else { "Desktop" }
+# Only print banner if not already shown by _Common.ps1 (for PS5.1 compatibility)
+if (-not (Get-Variable -Name "FixInheritanceBannerShown" -ErrorAction SilentlyContinue)) {
+    Write-Host "****************************************************" -ForegroundColor Cyan
+    Write-Host "* PowerShell Version: $psVer ($psEd)" -ForegroundColor Cyan
+    Write-Host "****************************************************" -ForegroundColor Cyan
+    Write-Host ""
+    Set-Variable -Name "FixInheritanceBannerShown" -Value $true -Scope Script
+}
+
 . (Join-Path $PSScriptRoot '_Common.ps1')
 
 function Invoke-TakeOwnership {

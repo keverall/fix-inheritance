@@ -28,23 +28,14 @@ if (-not $ScriptRoot) { $ScriptRoot = $PWD.Path }
 
 # PS7+ detection (PSEdition is the most reliable signal)
 if ($PSVersionTable.PSEdition -ne 'Core' -and $PSVersionTable.PSVersion.Major -lt 6) {
-    $pwsh51Common = Join-Path $ScriptRoot -AdditionalChild "pwsh51", "_Common.ps1"
+    $pwsh51Common = Join-Path $ScriptRoot "pwsh51" "_Common.ps1"
     if (Test-Path -LiteralPath $pwsh51Common) {
         . $pwsh51Common
         return
     }
 }
 
-# Display clear PowerShell version banner (only if not already shown by main script)
-if (-not (Get-Variable -Name "FixInheritanceBannerShown" -ErrorAction SilentlyContinue)) {
-    $psVer = if ($PSVersionTable.PSVersion) { $PSVersionTable.PSVersion.ToString() } else { "Unknown" }
-    $psEd = if ($PSVersionTable.PSEdition) { $PSVersionTable.PSEdition } else { "Desktop" }
-    Write-Host "****************************************************" -ForegroundColor Cyan
-    Write-Host "* PowerShell Version: $psVer ($psEd)" -ForegroundColor Cyan
-    Write-Host "****************************************************" -ForegroundColor Cyan
-    Write-Host ""
-    Set-Variable -Name "FixInheritanceBannerShown" -Value $true -Scope Script
-}
+
 
 #region Constants
 # Windows MAX_PATH is 260; the \\?\ prefix lets APIs handle longer paths.

@@ -26,15 +26,6 @@ if (-not $ScriptRoot) { $ScriptRoot = $MyInvocation.PSScriptRoot }
 if (-not $ScriptRoot) { $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
 if (-not $ScriptRoot) { $ScriptRoot = $PWD.Path }
 
-# PS7+ detection (PSEdition is the most reliable signal)
-if ($PSVersionTable.PSEdition -ne 'Core' -and $PSVersionTable.PSVersion.Major -lt 6) {
-    $pwsh51Common = Join-Path $ScriptRoot -AdditionalChild "pwsh51", "_Common.ps1"
-    if (Test-Path -LiteralPath $pwsh51Common) {
-        . $pwsh51Common
-        return
-    }
-}
-
 # Display clear PowerShell version banner (only if not already shown by main script)
 if (-not (Get-Variable -Name "FixInheritanceBannerShown" -ErrorAction SilentlyContinue)) {
     $psVer = if ($PSVersionTable.PSVersion) { $PSVersionTable.PSVersion.ToString() } else { "Unknown" }

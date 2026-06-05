@@ -46,7 +46,7 @@ if (-not $ScriptRoot) { $ScriptRoot = $PWD.Path }
 
 # PS7+ detection (PSEdition is the most reliable signal)
 if ($PSVersionTable.PSEdition -ne 'Core' -and $PSVersionTable.PSVersion.Major -lt 6) {
-    $pwsh51Script = Join-Path $ScriptRoot -AdditionalChild "pwsh51", "Fix-Inheritance.ps1"
+    $pwsh51Script = Join-Path $ScriptRoot "pwsh51" "Fix-Inheritance.ps1"
     if (Test-Path -LiteralPath $pwsh51Script) {
         if ($MyInvocation.InvocationName -eq '.') {
             . $pwsh51Script @PSBoundParameters
@@ -66,7 +66,7 @@ Write-Host "* PowerShell Version: $psVer ($psEd)" -ForegroundColor Cyan
 Write-Host "****************************************************" -ForegroundColor Cyan
 Write-Host ""
 
-. (Join-Path $PSScriptRoot '_Common.ps1')
+. (Join-Path $ScriptRoot '_Common.ps1')
 
 function Invoke-FixInheritance {
     [CmdletBinding()]
@@ -76,10 +76,10 @@ function Invoke-FixInheritance {
         [string]$LogPath = $null
     )
 
-    $repoRoot = Split-Path $PSScriptRoot -Parent
+    $repoRoot = Split-Path $ScriptRoot -Parent
     if (-not $OutputPath) { $OutputPath = Join-Path $repoRoot 'output/FailedInheritance.csv' }
     if (-not $OutputPath.ToLower().EndsWith('.csv')) { $OutputPath = $OutputPath + '.csv' }
-    if (-not $LogPath) { $LogPath = Join-Path $repoRoot 'logs/FailedInheritance.log' }
+    if (-not $LogPath) { $LogPath = [System.IO.Path]::ChangeExtension($OutputPath, '.log') }
 
     $OutputCsv = [System.IO.Path]::GetFullPath($OutputPath)
     $LogPath = [System.IO.Path]::GetFullPath($LogPath)
