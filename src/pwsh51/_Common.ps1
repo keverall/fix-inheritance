@@ -174,12 +174,12 @@ function Get-ErrorReason {
 # Records a failure entry in the list. Kept pure (no I/O) for testability.
 function Add-Failure {
     param(
-        [string]$FullPath,
+        [string]$FilePath,
         [string]$ErrorReason,
         [System.Collections.Generic.List[object]]$FailedItems
     )
     $FailedItems.Add([PSCustomObject]@{
-        FilePath     = $FullPath
+        FilePath     = $FilePath
         ErrorReason  = $ErrorReason
         Timestamp    = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
     })

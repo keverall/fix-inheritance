@@ -112,34 +112,34 @@ function Invoke-FixInheritance {
          $summaryLine = $null
          foreach ($line in $lines) {
              # Parse the icacls error format: "Path: Error message"
-             if ($line -match '^((?:[a-zA-Z]:|\\\\).*?):\s+(.*)$') {
-                 $failPath = $Matches[1].Trim()
-                 $rawReason = $Matches[2].Trim()
-                 # Normalize the raw icacls message into a categorized error reason
-                 $failReason = Get-ErrorReason -ExitCode 0 -ErrorOutput $rawReason
-                 Add-Failure -FullPath $failPath -ErrorReason $failReason -FailedItems $failedItems
-                 $failedCount++
-             } else {
-                 # Check if this line is the summary line (processed files, or contains numbers)
-                 if ($line -match 'processed.*files' -or $line -match '\d+.*?\d+') {
-                     $summaryLine = $line
-                 } else {
-                     # Unrecognized error format
-                     Add-Failure -FullPath $TargetPath -ErrorReason "icacls output: $line" -FailedItems $failedItems
-                     $failedCount++
-                 }
-             }
-         }
-        
+              if ($line -match '^((?:[a-zA-Z]:|\\\\).*?):\s+(.*)$') {
+                  $FilePath = $Matches[1].Trim()
+                  $rawReason = $Matches[2].Trim()
+                  # Normalize the raw icacls message into a categorized error reason
+                  $failReason = Get-ErrorReason -ExitCode 0 -ErrorOutput $rawReason
+                  Add-Failure -FilePath $FilePath -ErrorReason $failReason -FailedItems $failedItems
+                  $failedCount++
+              } else {
+                  # Check if this line is the summary line (processed files, or contains numbers)
+                  if ($line -match 'processed.*files' -or $line -match '\d+.*?\d+') {
+                      $summaryLine = $line
+                  } else {
+                      # Unrecognized error format
+                      Add-Failure -FilePath $TargetPath -ErrorReason "icacls output: $line" -FailedItems $failedItems
+                      $failedCount++
+                  }
+              }
+          }
+         
         if ($r.ExitCode -ne 0 -and $failedCount -eq 0) {
-            Add-Failure -FullPath $TargetPath `
+            Add-Failure -FilePath $TargetPath `
                 -ErrorReason "icacls failed with exit code $($r.ExitCode) but no specific file errors were parsed." `
                 -FailedItems $failedItems
             $failedCount++
         }
     } catch {
         Write-Status "Bulk operation failed: $_" -Level 'WARNING'
-        Add-Failure -FullPath $TargetPath `
+        Add-Failure -FilePath $TargetPath `
             -ErrorReason "Bulk operation exception: $($_.Exception.Message)" `
             -FailedItems $failedItems
         $failedCount++

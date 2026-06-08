@@ -131,7 +131,7 @@ function Invoke-TakeOwnership {
 
     foreach ($file in $failedFiles) {
         $processedCount++
-        $filePath = $file.FilePath
+        $FilePath = $file.FilePath
 
         if ($processedCount % 100 -eq 0 -or $processedCount -eq 1) {
             Write-Status "Progress: [$processedCount/$totalCount] Processing..."
@@ -142,38 +142,38 @@ function Invoke-TakeOwnership {
 
         $takeownErrorReason = $null
         try {
-            $takeownPath = Get-LongPath $filePath
+            $takeownPath = Get-LongPath $FilePath
             $r = Invoke-NativeCommand -FileName 'takeown.exe' -Arguments @('/f', $takeownPath)
             if ($r.ExitCode -ne 0) {
                 $takeownErrorReason = (Get-ErrorReason -ExitCode $r.ExitCode -ErrorOutput ($r.Output + "`n" + $r.Error))
-                Write-Status "  [$processedCount/$totalCount] $filePath -> FAILED (takeown: $takeownErrorReason)" -Level 'ERROR'
+                Write-Status "  [$processedCount/$totalCount] $FilePath -> FAILED (takeown: $takeownErrorReason)" -Level 'ERROR'
                 $stillFailedCount++
                 $status = 'Failed'
                 $statusDetail = "Takeown failed: $takeownErrorReason"
             } else {
-                $icaclsPath = Get-LongPath $filePath
+                $icaclsPath = Get-LongPath $FilePath
                 $r2 = Invoke-NativeCommand -FileName 'icacls.exe' -Arguments @($icaclsPath, '/inheritance:e', '/C')
                 if ($r2.ExitCode -eq 0) {
-                    Write-Status "  [$processedCount/$totalCount] $filePath -> FIXED"
+                    Write-Status "  [$processedCount/$totalCount] $FilePath -> FIXED"
                     $succeededCount++
                     $status = 'Fixed'
                 } else {
                     $icaclsErrorReason = (Get-ErrorReason -ExitCode $r2.ExitCode -ErrorOutput ($r2.Output + "`n" + $r2.Error))
-                    Write-Status "  [$processedCount/$totalCount] $filePath -> FAILED (icacls: $icaclsErrorReason after takeown)" -Level 'ERROR'
+                    Write-Status "  [$processedCount/$totalCount] $FilePath -> FAILED (icacls: $icaclsErrorReason after takeown)" -Level 'ERROR'
                     $stillFailedCount++
                     $status = 'Failed'
                     $statusDetail = "Inheritance restore failed after takeown: $icaclsErrorReason"
                 }
             }
         } catch {
-            Write-Status "  [$processedCount/$totalCount] $filePath -> EXCEPTION: $($_.Exception.Message)" -Level 'ERROR'
+            Write-Status "  [$processedCount/$totalCount] $FilePath -> EXCEPTION: $($_.Exception.Message)" -Level 'ERROR'
             $stillFailedCount++
             $status = 'Failed'
             $statusDetail = "Exception: $($_.Exception.Message)"
         }
 
         $results.Add([PSCustomObject]@{
-            FilePath      = $filePath
+            FilePath      = $FilePath
             OriginalError = $file.ErrorReason
             Status        = $status
             StatusDetail  = $statusDetail
