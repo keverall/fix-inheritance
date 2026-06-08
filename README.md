@@ -52,8 +52,8 @@ The scripts automatically detect the PowerShell version. If run on Windows Power
 
 **Produces:**
 
-- `output/FailedInheritance.csv` — list of all files where inheritance could not be enabled.
-- `logs/FailedInheritance.log` — detailed execution log.
+- `output/FailedInheritance_yyyymmdd_hhmmss.csv` — list of all files where inheritance could not be enabled.
+- `logs/FailedInheritance_yyyymmdd_hhmmss.log` — detailed execution log.
 
 **Custom output paths:**
 *(Note: The `.csv` extension is appended automatically to `-OutputPath` if omitted. If `-LogPath` is omitted, the log defaults to the `logs/` folder in the repo root, regardless of the `-OutputPath` value.)*
@@ -65,13 +65,13 @@ The scripts automatically detect the PowerShell version. If run on Windows Power
 ### Step 2: Take ownership of failed files (run as Administrator)
 
 ```powershell
-.\src\Take-Ownership.ps1 -CsvPath ".\output\FailedInheritance.csv"
+.\src\Take-Ownership.ps1 -CsvPath ".\output\FailedInheritance_TIMESTAMP.csv"
 ```
 
 **Produces:**
 
 - `output/Results_TIMESTAMP.csv` — tracks each file's final status (Fixed/Failed).
-- `logs/TakeOwnership.log` — detailed execution log.
+- `logs/TakeOwnership_TIMESTAMP.log` — detailed execution log.
 
 ### Step 3: Re-run if needed
 
@@ -98,7 +98,7 @@ The scripts automatically detect the PowerShell version. If run on Windows Power
 
 ## CSV Format
 
-### Fix-Inheritance Output (`FailedInheritance.csv`)
+### Fix-Inheritance Output (`FailedInheritance_yyyymmdd_hhmmss.csv`)
 
 ```csv
 FilePath,FileName,ParentFolder,FolderName,ErrorReason,PathLength,IsLongPath,Timestamp
@@ -147,7 +147,7 @@ Each run creates a log file:
 - Format: `[YYYY-MM-DD HH:MM:SS] [LEVEL] Message`
 - Levels: INFO, WARNING, ERROR
 - Records: start/end times, file counts, errors, configuration.
-- **Default Behavior**: If `-LogPath` is not explicitly provided, logs are written to the `logs/` folder in the repository root (e.g., `logs/FailedInheritance.log` or `logs/TakeOwnership.log`), regardless of where `-OutputPath` or `-OutputCsv` points.
+- **Default Behavior**: If `-LogPath` is not explicitly provided, logs are written to the `logs/` folder in the repository root (e.g., `logs/FailedInheritance_yyyymmdd_hhmmss.log` or `logs/TakeOwnership_yyyymmdd_hhmmss.log`), regardless of where `-OutputPath` or `-OutputCsv` points.
 
 ### Safety Features
 

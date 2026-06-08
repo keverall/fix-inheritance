@@ -58,10 +58,18 @@ function Resolve-OutputPaths {
         [string]$DefaultCsvName,
         [string]$DefaultLogName
     )
-    
-    if (-not $OutputCsv) { $OutputCsv = [System.IO.Path]::Combine($script:RepoRoot, 'output', $DefaultCsvName) }
+
+    $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+
+    if (-not $OutputCsv) {
+        $csvBase = [System.IO.Path]::GetFileNameWithoutExtension($DefaultCsvName)
+        $OutputCsv = [System.IO.Path]::Combine($script:RepoRoot, 'output', "${csvBase}_$timestamp.csv")
+    }
     if (-not $OutputCsv.ToLower().EndsWith('.csv')) { $OutputCsv += '.csv' }
-    if (-not $LogPath) { $LogPath = [System.IO.Path]::Combine($script:RepoRoot, 'logs', $DefaultLogName) }
+    if (-not $LogPath) {
+        $logBase = [System.IO.Path]::GetFileNameWithoutExtension($DefaultLogName)
+        $LogPath = [System.IO.Path]::Combine($script:RepoRoot, 'logs', "${logBase}_$timestamp.log")
+    }
 
     $resolvedCsv = [System.IO.Path]::GetFullPath($OutputCsv)
     $resolvedLog = [System.IO.Path]::GetFullPath($LogPath)

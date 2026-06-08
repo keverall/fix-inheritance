@@ -30,7 +30,7 @@
 .PARAMETER LogPath
     Path for the log file. Default: in logs/ folder under root directory
 .EXAMPLE
-    .\Take-Ownership.ps1 -CsvPath "./output/FailedInheritance.csv"
+     .\Take-Ownership.ps1 -CsvPath "./output/FailedInheritance_yyyymmdd_hhmmss.csv"
 #>
 
 [CmdletBinding()]
@@ -93,8 +93,7 @@ function Invoke-TakeOwnership {
         Write-Error "CSV file not found: $CsvPath"
         return
     }
-    $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
-    $paths = Resolve-OutputPaths -OutputCsv $OutputCsv -LogPath $LogPath -DefaultCsvName "Results_$timestamp.csv" -DefaultLogName 'TakeOwnership.log'
+    $paths = Resolve-OutputPaths -OutputCsv $OutputCsv -LogPath $LogPath -DefaultCsvName 'Results' -DefaultLogName 'TakeOwnership'
     $OutputCsv = $paths.OutputCsv
     $LogPath = $paths.LogPath
 
