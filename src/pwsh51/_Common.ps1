@@ -25,6 +25,11 @@ $ScriptRoot = $PSScriptRoot
 if (-not $ScriptRoot) { $ScriptRoot = $MyInvocation.PSScriptRoot }
 if (-not $ScriptRoot) { $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
 if (-not $ScriptRoot) { $ScriptRoot = $PWD.Path }
+if ($ScriptRoot -and (Split-Path $ScriptRoot -Leaf) -eq 'pwsh51') {
+    $ScriptRoot = Split-Path $ScriptRoot -Parent
+}
+
+
 
 # Display clear PowerShell version banner (only if not already shown by main script)
 if (-not (Get-Variable -Name "FixInheritanceBannerShown" -ErrorAction SilentlyContinue)) {
@@ -41,6 +46,34 @@ if (-not (Get-Variable -Name "FixInheritanceBannerShown" -ErrorAction SilentlyCo
 # Windows MAX_PATH is 260; the \\?\ prefix lets APIs handle longer paths.
 $script:MaxPathLength = 260
 $script:LongPathPrefix = '\\?\'
+#endregion
+
+#region Path Resolution
+$script:RepoRoot = Split-Path $ScriptRoot -Parent
+
+function Resolve-OutputPaths {
+    param(
+        [string]$OutputCsv,
+        [string]$LogPath,
+        [string]$DefaultCsvName,
+        [string]$DefaultLogName
+    )
+    
+    if (-not $OutputCsv) { $OutputCsv = [System.IO.Path]::Combine($script:RepoRoot, 'output', $DefaultCsvName) }
+    if (-not $OutputCsv.ToLower().EndsWith('.csv')) { $OutputCsv += '.csv' }
+    if (-not $LogPath) { $LogPath = [System.IO.Path]::Combine($script:RepoRoot, 'logs', $DefaultLogName) }
+
+    $resolvedCsv = [System.IO.Path]::GetFullPath($OutputCsv)
+    $resolvedLog = [System.IO.Path]::GetFullPath($LogPath)
+
+    New-DirectoryIfMissing ([System.IO.Path]::GetDirectoryName($resolvedCsv))
+    New-DirectoryIfMissing ([System.IO.Path]::GetDirectoryName($resolvedLog))
+
+    return @{
+        OutputCsv = $resolvedCsv
+        LogPath = $resolvedLog
+    }
+}
 #endregion
 
 #region Pure Functions

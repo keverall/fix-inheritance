@@ -3,8 +3,8 @@
 
 param(
     [string]$TestRoot = "S:\",
-    [string]$OutputPath = ".\output\TestResults.csv",
-    [string]$LogPath = ".\logs\TestResults.log"
+    [string]$OutputPath = "..\..\..\output\TestResults.csv",
+    [string]$LogPath = "..\..\..\logs\TestResults.log"
 )
 
 $ErrorActionPreference = "Stop"

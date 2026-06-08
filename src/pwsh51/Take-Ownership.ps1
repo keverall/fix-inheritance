@@ -46,6 +46,15 @@ param(
     [string]$LogPath = $null
 )
 
+# Version detection - robust fallback for environments where $PSScriptRoot is unavailable
+$ScriptRoot = $PSScriptRoot
+if (-not $ScriptRoot) { $ScriptRoot = $MyInvocation.PSScriptRoot }
+if (-not $ScriptRoot) { $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
+if (-not $ScriptRoot) { $ScriptRoot = $PWD.Path }
+if ($ScriptRoot -and (Split-Path $ScriptRoot -Leaf) -eq 'pwsh51') {
+    $ScriptRoot = Split-Path $ScriptRoot -Parent
+}
+
 . (Join-Path $PSScriptRoot '_Common.ps1')
 
 function Invoke-TakeOwnership {
@@ -60,19 +69,11 @@ function Invoke-TakeOwnership {
         Write-Error "CSV file not found: $CsvPath"
         return
     }
+    $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+    $paths = Resolve-OutputPaths -OutputCsv $OutputCsv -LogPath $LogPath -DefaultCsvName "Results_$timestamp.csv" -DefaultLogName 'TakeOwnership.log'
+    $OutputCsv = $paths.OutputCsv
+    $LogPath = $paths.LogPath
 
-    if (-not $OutputCsv) {
-        $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
-        $outputDir = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($CsvPath))
-        $OutputCsv = Join-Path $outputDir "Results_$timestamp.csv"
-    }
-    if (-not $LogPath) { $LogPath = './logs/TakeOwnership.log' }
-
-    $OutputCsv = [System.IO.Path]::GetFullPath($OutputCsv)
-    $LogPath = [System.IO.Path]::GetFullPath($LogPath)
-
-    New-DirectoryIfMissing ([System.IO.Path]::GetDirectoryName($OutputCsv))
-    New-DirectoryIfMissing ([System.IO.Path]::GetDirectoryName($LogPath))
 
     $isAdmin = $true
     if ($IsWindows -or $PSVersionTable.Platform -eq 'Win32NT' -or -not $PSVersionTable.ContainsKey('Platform')) {

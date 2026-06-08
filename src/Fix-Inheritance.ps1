@@ -51,6 +51,9 @@ $ScriptRoot = $PSScriptRoot
 if (-not $ScriptRoot) { $ScriptRoot = $MyInvocation.PSScriptRoot }
 if (-not $ScriptRoot) { $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
 if (-not $ScriptRoot) { $ScriptRoot = $PWD.Path }
+if ($ScriptRoot -and (Split-Path $ScriptRoot -Leaf) -eq 'pwsh51') {
+    $ScriptRoot = Split-Path $ScriptRoot -Parent
+}
 
 # PS7+ detection (PSEdition is the most reliable signal)
 if ($PSVersionTable.PSEdition -ne 'Core' -and $PSVersionTable.PSVersion.Major -lt 6) {
@@ -87,17 +90,9 @@ function Invoke-FixInheritance {
         [string]$OutputPath = $null,
         [string]$LogPath = $null
     )
-
-    $repoRoot = Split-Path $ScriptRoot -Parent
-    if (-not $OutputPath) { $OutputPath = [System.IO.Path]::Combine($repoRoot, 'output', 'FailedInheritance.csv') }
-    if (-not $OutputPath.ToLower().EndsWith('.csv')) { $OutputPath = $OutputPath + '.csv' }
-    if (-not $LogPath) { $LogPath = [System.IO.Path]::Combine($repoRoot, 'logs', 'FailedInheritance.log') }
-
-    $OutputCsv = [System.IO.Path]::GetFullPath($OutputPath)
-    $LogPath = [System.IO.Path]::GetFullPath($LogPath)
-
-    New-DirectoryIfMissing ([System.IO.Path]::GetDirectoryName($OutputCsv))
-    New-DirectoryIfMissing ([System.IO.Path]::GetDirectoryName($LogPath))
+    $paths = Resolve-OutputPaths -OutputCsv $OutputPath -LogPath $LogPath -DefaultCsvName 'FailedInheritance.csv' -DefaultLogName 'FailedInheritance.log'
+    $OutputCsv = $paths.OutputCsv
+    $LogPath = $paths.LogPath
 
     if (-not (Test-Path -LiteralPath $TargetPath)) {
         Write-Status "Target path does not exist: $TargetPath" -Level 'ERROR'

@@ -29,11 +29,10 @@ These scripts solve common Windows file permission inheritance problems by:
 ```
 
 Produces:
-
 - `output/FailedInheritance.csv` — list of all files where inheritance could not be enabled
-- `output/FailedInheritance.log` — detailed execution log (same base name as CSV)
+- `logs/FailedInheritance.log` — detailed execution log in the logs folder
 
-Custom output path (`.csv` extension is appended automatically if omitted, and `.log` defaults next to it):
+Custom output path (`.csv` extension is appended automatically if omitted; logs always go to `logs/FailedInheritance.log` in the repo root unless `-LogPath` is specified):
 
 **PowerShell Version Banner:** The script prints a clearly highlighted PowerShell version banner on startup (for example, `PowerShell Version: 7.6.2 (Core)`) so you can immediately confirm which runtime is executing.
 
@@ -49,7 +48,7 @@ Produces `C:\reports\failures.csv` and `C:\reports\failures.log`.
 .\src\Take-Ownership.ps1 -CsvPath "./output/FailedInheritance.csv"
 ```
 
-Produces `Results_TIMESTAMP.csv` next to the input CSV and a log file.
+Produces `Results_TIMESTAMP.csv` in the output folder and a log file in the logs folder.
 
 ### Step 3: Re-run if needed
 
@@ -144,7 +143,7 @@ Each run creates a log file:
 - Levels: INFO, WARNING, ERROR
 - Records: start/end times, file counts, errors, configuration
 - Fix-Inheritance: log is placed next to the output CSV with `.log` extension (same base name)
-- Take-Ownership: log defaults to `./logs/TakeOwnership.log` unless `-LogPath` is specified
+- Take-Ownership: log defaults to `logs/TakeOwnership.log` (repo root) unless `-LogPath` is specified
 
 ### Safety Features
 
