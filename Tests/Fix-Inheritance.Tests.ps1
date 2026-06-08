@@ -317,15 +317,24 @@ Describe "Fix-Inheritance integration tests" {
         Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log
         $rows = Import-Csv -Path $csv
         $targetMatches = @($rows | Where-Object { $_.FilePath -eq $script:root -or $_.ParentFolder -eq $script:root })
-        $targetMatches.Count | Should -BeGreaterThan 0
+$targetMatches.Count | Should -BeGreaterThan 0
     }
 
-    It "Resolves default LogPath next to OutputPath (regression for broken syntax)" {
-        New-Item -ItemType File -Path (Join-Path $script:root 'x.txt') -Force | Out-Null
-        $csv = Join-Path $script:root 'myname'
-        $log = Join-Path $script:root 'myname.log'
-        Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv
-        Test-Path "$csv.csv" | Should -Be $true
-        # Test-Path $log | Should -Be $true
+    It "Generates timestamped default output filenames in repo folders" {
+        New-Item -ItemType Directory -Path (Join-Path $script:root 'empty') | Out-Null
+
+        Invoke-FixInheritance -TargetPath (Join-Path $script:root 'empty')
+
+        $csvFiles = Get-ChildItem -Path $script:RepoRoot/output -Filter 'FailedInheritance_*.csv' -ErrorAction SilentlyContinue
+        $logFiles = Get-ChildItem -Path $script:RepoRoot/logs -Filter 'FailedInheritance_*.log' -ErrorAction SilentlyContinue
+
+        $csvFiles | Should -Not -BeNullOrEmpty
+        $logFiles | Should -Not -BeNullOrEmpty
+
+        $csvName = $csvFiles[0].Name
+        $logName = $logFiles[0].Name
+
+        $csvName -match '^FailedInheritance_(\d{8}_\d{6})\.csv$' | Should -Be $true
+        $logName -match '^FailedInheritance_(\d{8}_\d{6})\.log$' | Should -Be $true
     }
 }

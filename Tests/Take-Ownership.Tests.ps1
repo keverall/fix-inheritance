@@ -111,17 +111,34 @@ Describe "Invoke-TakeOwnership" {
         Test-Path "$out.csv" | Should -Be $false
     }
 
-    It "Generates a default OutputCsv when none is given" {
+    It "Generates timestamped default output filenames in repo folders" {
         $csv = Join-Path $script:tmpDir "input.csv"
         '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"' |
             Set-Content -Path $csv -Encoding UTF8
-        $log = Join-Path $script:tmpDir "out.log"
 
-        Invoke-TakeOwnership -CsvPath $csv -LogPath $log
+        Invoke-TakeOwnership -CsvPath $csv
 
-        # A Results_YYYYMMDD_HHMMSS.csv should appear next to the input
-        $results = Get-ChildItem -Path $script:tmpDir -Filter 'Results_*.csv'
-        # $results.Count | Should -Be 1
+        $results = Get-ChildItem -Path $script:RepoRoot/output -Filter 'Results_*.csv' -ErrorAction SilentlyContinue
+        $logFiles = Get-ChildItem -Path $script:RepoRoot/logs -Filter 'TakeOwnership_*.log' -ErrorAction SilentlyContinue
+
+        $results | Should -Not -BeNullOrEmpty
+        $logFiles | Should -Not -BeNullOrEmpty
+
+        $results[0].Name -match '^Results_(\d{8}_\d{6})\.csv$' | Should -Be $true
+        $logFiles[0].Name -match '^TakeOwnership_(\d{8}_\d{6})\.log$' | Should -Be $true
+    }
+
+    It "Creates default log with TakeOwnership prefix in repo logs folder" {
+        $csv = Join-Path $script:tmpDir "input.csv"
+        '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"' |
+            Set-Content -Path $csv -Encoding UTF8
+
+        Invoke-TakeOwnership -CsvPath $csv
+
+        $log = Get-ChildItem -Path $script:RepoRoot/logs -Filter 'TakeOwnership_*.log' -ErrorAction SilentlyContinue
+        $log | Should -Not -BeNullOrEmpty
+
+        $log[0].Name -match '^TakeOwnership_(\d{8}_\d{6})\.log$' | Should -Be $true
     }
 }
 
