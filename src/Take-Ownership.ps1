@@ -22,14 +22,13 @@
         Fix-Inheritance.ps1) so post-mortem is possible.
 
 .PARAMETER CsvPath
-    Path to the FailedInheritance.csv file
+    Path to the FailedInheritance.csv file in output/ folder under root directory
 
 .PARAMETER OutputCsv
-    Path for results CSV. Default: ./output/TakeOwnershipResults.csv
+    Path for results CSV. Default: in output/ folder under root directory
 
 .PARAMETER LogPath
-    Path for the log file. Default: ./logs/TakeOwnership.log
-
+    Path for the log file. Default: in logs/ folder under root directory
 .EXAMPLE
     .\Take-Ownership.ps1 -CsvPath "./output/FailedInheritance.csv"
 #>
@@ -144,7 +143,7 @@ function Invoke-TakeOwnership {
         $takeownErrorReason = $null
         try {
             $takeownPath = Get-LongPath $filePath
-            $r = Invoke-NativeCommand -FileName 'takeown.exe' -Arguments @('/f', $takeownPath, '/A')
+            $r = Invoke-NativeCommand -FileName 'takeown.exe' -Arguments @('/f', $takeownPath)
             if ($r.ExitCode -ne 0) {
                 $takeownErrorReason = (Get-ErrorReason -ExitCode $r.ExitCode -ErrorOutput ($r.Output + "`n" + $r.Error))
                 Write-Status "  [$processedCount/$totalCount] $filePath -> FAILED (takeown: $takeownErrorReason)" -Level 'ERROR'

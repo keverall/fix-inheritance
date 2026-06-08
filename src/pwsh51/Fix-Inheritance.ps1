@@ -19,11 +19,11 @@
 .PARAMETER TargetPath
     The root folder path to fix inheritance on (e.g., R:\r_vs13_d2\ftcregfin\)
 
-.PARAMETER OutputPath
-    Path for the output CSV file. Default: ./output/FailedInheritance.csv
+.PARAMETER OutputCsv
+    Path for results CSV. Default: in output/ folder under root directory
 
 .PARAMETER LogPath
-    Path for the log file. Default: ./logs/FailedInheritance.log
+    Path for the log file. Default: in logs/ folder under root directory
 #>
 
 [CmdletBinding()]
