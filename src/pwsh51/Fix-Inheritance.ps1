@@ -19,7 +19,7 @@
 .PARAMETER TargetPath
     The root folder path to fix inheritance on (e.g., R:\r_vs13_d2\ftcregfin\)
 
-.PARAMETER OutputCsv
+.PARAMETER OutputPath
     Path for results CSV. Default: in output/ folder under root directory
 
 .PARAMETER LogPath
