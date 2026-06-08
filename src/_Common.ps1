@@ -178,12 +178,7 @@ function Add-Failure {
     )
     $FailedItems.Add([PSCustomObject]@{
         FilePath     = $FullPath
-        FileName     = [System.IO.Path]::GetFileName($FullPath)
-        ParentFolder = [System.IO.Path]::GetDirectoryName($FullPath)
-        FolderName   = [System.IO.Path]::GetFileName([System.IO.Path]::GetDirectoryName($FullPath))
         ErrorReason  = $ErrorReason
-        PathLength   = $FullPath.Length
-        IsLongPath   = ($FullPath.Length -gt $script:MaxPathLength)
         Timestamp    = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
     })
 }
@@ -304,10 +299,10 @@ function Write-FailureCsv {
         [Parameter(Mandatory = $true)][string]$OutputCsv
     )
     if ($FailedItems -and $FailedItems.Count -gt 0) {
-        $FailedItems | Select-Object FilePath, FileName, ParentFolder, FolderName, ErrorReason, PathLength, IsLongPath, Timestamp |
+        $FailedItems | Select-Object FilePath, ErrorReason, Timestamp |
             Export-Csv -Path $OutputCsv -NoTypeInformation -Encoding UTF8 -Force
     } else {
-        '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"' |
+        '"FilePath","ErrorReason","Timestamp"' |
             Set-Content -Path $OutputCsv -Encoding UTF8 -Force
     }
 }

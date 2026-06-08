@@ -43,19 +43,19 @@ if (Test-Path $OutputPath) {
 }
 
 # Check for special character handling
-$specialFiles = $errors | Where-Object { $_.FileName -match 'file[,\s"`^]' }
+$specialFiles = $results | Where-Object { [System.IO.Path]::GetFileName($_.FilePath) -match 'file[,\s"`^]' }
 if ($specialFiles) {
     Write-Host "[PASS] Special character filenames handled: $($specialFiles.Count) files"
 }
 
 # Check for deep path handling
-$deepFiles = $errors | Where-Object { $_.FilePath -match "level20" }
+$deepFiles = $results | Where-Object { $_.FilePath -match "level20" }
 if ($deepFiles) {
     Write-Host "[PASS] Deep paths handled: $($deepFiles.Count) files"
 }
 
 # Check for long path handling
-$longFiles = $errors | Where-Object { $_.IsLongPath -eq "True" }
+$longFiles = $results | Where-Object { $_.FilePath.Length -gt 260 }
 if ($longFiles) {
     Write-Host "[PASS] Long paths handled: $($longFiles.Count) files"
 }

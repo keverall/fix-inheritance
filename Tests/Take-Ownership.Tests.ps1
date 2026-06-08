@@ -63,7 +63,7 @@ Describe "Invoke-TakeOwnership" {
     It "Writes results CSV with correct header for empty input" {
         $csv = Join-Path $script:tmpDir "input.csv"
         # Header-only CSV (no rows)
-        '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"' |
+        '"FilePath","ErrorReason","Timestamp"' |
             Set-Content -Path $csv -Encoding UTF8
 
         $out = Join-Path $script:tmpDir "out.csv"
@@ -73,12 +73,12 @@ Describe "Invoke-TakeOwnership" {
 
         Test-Path $out | Should -Be $true
         $header = Get-Content $out -TotalCount 1
-        $header | Should -Be '"FilePath","FileName","ParentFolder","FolderName","OriginalError","Status","StatusDetail","Timestamp"'
+        $header | Should -Be '"FilePath","OriginalError","Status","StatusDetail","Timestamp"'
     }
 
     It "Writes structured log entries" {
         $csv = Join-Path $script:tmpDir "input.csv"
-        '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"' |
+        '"FilePath","ErrorReason","Timestamp"' |
             Set-Content -Path $csv -Encoding UTF8
 
         $out = Join-Path $script:tmpDir "out.csv"
@@ -100,7 +100,7 @@ Describe "Invoke-TakeOwnership" {
 
     It "Does not double-append .csv to OutputCsv" {
         $csv = Join-Path $script:tmpDir "input.csv"
-        '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"' |
+        '"FilePath","ErrorReason","Timestamp"' |
             Set-Content -Path $csv -Encoding UTF8
         $out = Join-Path $script:tmpDir "results.csv"
         $log = Join-Path $script:tmpDir "out.log"
@@ -113,7 +113,7 @@ Describe "Invoke-TakeOwnership" {
 
     It "Generates timestamped default output filenames in repo folders" {
         $csv = Join-Path $script:tmpDir "input.csv"
-        '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"' |
+        '"FilePath","ErrorReason","Timestamp"' |
             Set-Content -Path $csv -Encoding UTF8
 
         Invoke-TakeOwnership -CsvPath $csv
@@ -130,7 +130,7 @@ Describe "Invoke-TakeOwnership" {
 
     It "Creates default log with TakeOwnership prefix in repo logs folder" {
         $csv = Join-Path $script:tmpDir "input.csv"
-        '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"' |
+        '"FilePath","ErrorReason","Timestamp"' |
             Set-Content -Path $csv -Encoding UTF8
 
         Invoke-TakeOwnership -CsvPath $csv

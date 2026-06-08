@@ -146,7 +146,7 @@ Describe "Fix-Inheritance integration tests" {
         Invoke-FixInheritance -TargetPath (Join-Path $script:root 'empty') -OutputPath $csv -LogPath $log
         Test-Path $csv | Should -Be $true
         $header = Get-Content $csv -TotalCount 1
-        $header | Should -Be '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"'
+        $header | Should -Be '"FilePath","ErrorReason","Timestamp"'
     }
 
     It "Creates a log file with structured entries" {
@@ -170,7 +170,7 @@ Describe "Fix-Inheritance integration tests" {
         Invoke-FixInheritance -TargetPath 'X:\nonexistent' -OutputPath $csv -LogPath $log
         Test-Path $csv | Should -Be $true
         $header = Get-Content $csv -TotalCount 1
-        $header | Should -Be '"FilePath","FileName","ParentFolder","FolderName","ErrorReason","PathLength","IsLongPath","Timestamp"'
+        $header | Should -Be '"FilePath","ErrorReason","Timestamp"'
         (Get-Content $csv).Count | Should -Be 1
     }
 
@@ -232,7 +232,7 @@ Describe "Fix-Inheritance integration tests" {
         $log = Join-Path $script:root 'out.log'
         Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log
         $rows = Import-Csv -Path $csv
-        $returnedNames = $rows | Where-Object { $_.FileName -in $special } | ForEach-Object { $_.FileName } | Sort-Object
+        $returnedNames = $rows | Where-Object { $special -contains [System.IO.Path]::GetFileName($_.FilePath) } | ForEach-Object { [System.IO.Path]::GetFileName($_.FilePath) } | Sort-Object
         ($returnedNames | Measure-Object).Count | Should -Be $special.Count
         $expectedNames = $special | Sort-Object
         $returnedNames | Should -Be $expectedNames
@@ -247,7 +247,7 @@ Describe "Fix-Inheritance integration tests" {
         Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log
         $rows = Import-Csv -Path $csv
         ($rows | Measure-Object).Count | Should -BeGreaterThan 0
-        $bottomRow = $rows | Where-Object { $_.FileName -eq 'bottom.txt' }
+        $bottomRow = $rows | Where-Object { [System.IO.Path]::GetFileName($_.FilePath) -eq 'bottom.txt' }
         $bottomRow | Should -Not -BeNullOrEmpty
         $bottomRow.FilePath | Should -Match 'l1'
         $bottomRow.FilePath | Should -Match 'bottom.txt'
@@ -316,7 +316,7 @@ Describe "Fix-Inheritance integration tests" {
         $log = Join-Path $script:root 'out.log'
         Invoke-FixInheritance -TargetPath $script:root -OutputPath $csv -LogPath $log
         $rows = Import-Csv -Path $csv
-        $targetMatches = @($rows | Where-Object { $_.FilePath -eq $script:root -or $_.ParentFolder -eq $script:root })
+        $targetMatches = @($rows | Where-Object { $_.FilePath -eq $script:root -or [System.IO.Path]::GetDirectoryName($_.FilePath) -eq $script:root })
 $targetMatches.Count | Should -BeGreaterThan 0
     }
 

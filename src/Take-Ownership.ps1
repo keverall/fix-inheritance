@@ -174,9 +174,6 @@ function Invoke-TakeOwnership {
 
         $results.Add([PSCustomObject]@{
             FilePath      = $filePath
-            FileName      = $file.FileName
-            ParentFolder  = $file.ParentFolder
-            FolderName    = $file.FolderName
             OriginalError = $file.ErrorReason
             Status        = $status
             StatusDetail  = $statusDetail
@@ -187,7 +184,7 @@ function Invoke-TakeOwnership {
     if ($results.Count -gt 0) {
         $results | Export-Csv -Path $OutputCsv -NoTypeInformation -Encoding UTF8 -Force
     } else {
-        '"FilePath","FileName","ParentFolder","FolderName","OriginalError","Status","StatusDetail","Timestamp"' |
+        '"FilePath","OriginalError","Status","StatusDetail","Timestamp"' |
             Set-Content -Path $OutputCsv -Encoding UTF8 -Force
     }
 
