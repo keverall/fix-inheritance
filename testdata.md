@@ -1,97 +1,36 @@
-# setup
+# Test Data Setup Notes
 
-1. Best & Easiest: Take Ownership + Strip Administrators Rights (recommended)
-Run these two commands on the target file/folder:
+This document provides instructions for creating test scenarios to validate the `fix-inheritance` scripts on Windows.
 
-# Replace the path with your test file/folder
+## Quick Setup
+
+### 1. Access Denied / Ownership Change Scenarios
+To reliably generate "Access Denied - requires ownership change" errors for testing, run these commands as Administrator on a target file or folder:
+
+```powershell
 $target = "S:\fix-inheritance-tests\protected\secret.txt"
 
+# Set owner to SYSTEM and grant rights only to SYSTEM, removing Administrators
 icacls $target /setowner "SYSTEM" /c
 icacls $target /inheritance:r /grant "SYSTEM:(OI)(CI)F" /remove:g "Administrators" /remove:d "Administrators" /c
-Do the same for a folder if you want.
+```
+*Note: A helper function `Set-AdministratorDeniedInheritance` is available in `Tests/TestData/Setup-WindowsTestData.ps1` to automate this for entire directories.*
 
-After this, running the tool as a normal Administrator should produce an “Access Denied - requires ownership change” row in the CSV.
+### 2. File in Use Scenarios (Sharing Violation - Exit Code 32)
+To simulate a locked file, keep it open in another process while running the tool:
 
-2. Quick one-liner version (single file)
-icacls "S:\fix-inheritance-tests\myfile.txt" /setowner SYSTEM /inheritance:r /grant SYSTEM:F /remove:g Administrators /remove:d Administrators /c
-3. For “File in use” (sharing violation – exit 32)
-Keep the file open in another process, e.g.:
-
+```powershell
 # In one PowerShell window (keep it running)
 $file = [System.IO.File]::Open("S:\fix-inheritance-tests\inuse\locked.txt", 'Open', 'ReadWrite', 'None')
 
-# In another window run the tool — it should now report “File in use”
-Close the handle ($file.Close()) when done.
-
-Added `Set-AdministratorDeniedInheritance` helper function to `Tests/TestData/Setup-WindowsTestData.ps1`.
-
-The function:
-- Sets owner to `SYSTEM`
-- Grants rights only to `SYSTEM`
-- Removes **all** Administrators permissions
-
-It is now used for both the `protected` and `forbidden` test cases.
-
-You can also call it manually from any elevated session:
-
-```powershell
-. .\Tests\TestData\Setup-WindowsTestData.ps1   # dot-source to load the function
-Set-AdministratorDeniedInheritance -Path "S:\fix-inheritance-tests\mybadfolder"
+# In another window, run the tool — it should now report "File in use"
+# Remember to close the handle ($file.Close()) when done testing.
 ```
 
-Re-run the setup script to regenerate the test tree with the new reliable denial pattern.
+## Automated Test Data Generation
+For a comprehensive test suite, use the provided setup script (run as Administrator):
 
-
-
-
-
- .\src\Fix-Inheritance.ps1 -TargetPath "R:\R_VS13_D2\ftcREGFIN\CECIL\2011 Checking  Sheet\1. Feb 2011"
-Join-Path : A positional parameter cannot be found that accepts argument 'Fix-Inheritance.ps1'.
-At T:\KevinE\KevsProducts\fix-inheritance\src\Fix-Inheritance.ps1:57 char:21
-+ ...  $pwsh51Script = Join-Path $ScriptRoot "pwsh51" "Fix-Inheritance.ps1"
-+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : InvalidArgument: (:) [Join-Path], ParameterBindingException
-    + FullyQualifiedErrorId : PositionalParameterNotFound,Microsoft.PowerShell.Commands.JoinPathCommand
-
-Test-Path : Cannot bind argument to parameter 'LiteralPath' because it is null.
-At T:\KevinE\KevsProducts\fix-inheritance\src\Fix-Inheritance.ps1:58 char:32
-+     if (Test-Path -LiteralPath $pwsh51Script) {
-+                                ~~~~~~~~~~~~~
-    + CategoryInfo          : InvalidData: (:) [Test-Path], ParameterBindingValidationException
-    + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Commands.TestPathCom
-   mand
-
-****************************************************
-* PowerShell Version: 5.1.17763.8641 (Desktop)
-****************************************************
-
-Join-Path : A positional parameter cannot be found that accepts argument '_Common.ps1'.
-At T:\KevinE\KevsProducts\fix-inheritance\src\_Common.ps1:31 char:21
-+     $pwsh51Common = Join-Path $ScriptRoot "pwsh51" "_Common.ps1"
-+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : InvalidArgument: (:) [Join-Path], ParameterBindingException
-    + FullyQualifiedErrorId : PositionalParameterNotFound,Microsoft.PowerShell.Commands.JoinPathCommand
-
-Test-Path : Cannot bind argument to parameter 'LiteralPath' because it is null.
-At T:\KevinE\KevsProducts\fix-inheritance\src\_Common.ps1:32 char:32
-+     if (Test-Path -LiteralPath $pwsh51Common) {
-+                                ~~~~~~~~~~~~~
-    + CategoryInfo          : InvalidData: (:) [Test-Path], ParameterBindingValidationException
-    + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Commands.TestPathCom
-   mand
-
-Output file already exists and will be overwritten: T:\KevinE\KevsProducts\fix-inheritance\output\FailedInheritance.csv
-Starting inheritance fix on: R:\R_VS13_D2\ftcREGFIN\CECIL\2011 Checking  Sheet\1. Feb 2011
-Output CSV:   T:\KevinE\KevsProducts\fix-inheritance\output\FailedInheritance.csv
-Log file:     T:\KevinE\KevsProducts\fix-inheritance\output\FailedInheritance.log
-Running bulk icacls operation on target path...
-==========================================
-Summary
-==========================================
-Total failed items:     32
-icacls summary:         Successfully processed 0 files; Failed processing 32 files
-CSV:                    T:\KevinE\KevsProducts\fix-inheritance\output\FailedInheritance.csv
-Error breakdown:
-  - 32 x Access Denied - requires ownership change
-Use Take-Ownership.ps1 to fix failed items.
-Done.
+```powershell
+.\Tests\TestData\Setup-WindowsTestData.ps1
+```
+This script creates a structured test tree at `S:\` (or a custom path) containing normal files, special character filenames, deep directory structures, long paths, protected files, and enumeration-error folders.
