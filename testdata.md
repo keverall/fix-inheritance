@@ -30,6 +30,81 @@ $file = [System.IO.File]::Open("S:\fix-inheritance-tests\inuse\locked.txt", 'Ope
 ## Automated Test Data Generation
 For a comprehensive test suite, use the provided setup script (run as Administrator):
 
+
+
+
+
+.\src\Fix-Inheritance.ps1 -TargetPath "R:\R_VS13_D2\ftcREGFIN\CECIL\2011 Checking  Sheet"
+The script failed due to call depth overflow.
+At C:\Products\Repos\fix-inheritance\src\pwsh51\Fix-Inheritance.ps1:46 char:5
++ if ($ScriptRoot -and (Split-Path $ScriptRoot -Leaf) -eq 'pwsh51') {
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (0:Int32) [], RuntimeException
+    + FullyQualifiedErrorId : CallDepthOverflow
+
+The script failed due to call depth overflow.
+At C:\Products\Repos\fix-inheritance\src\pwsh51\Fix-Inheritance.ps1:57 char:13
++             & $pwsh51Script @PSBoundParameters
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (0:Int32) [], RuntimeException
+    + FullyQualifiedErrorId : CallDepthOverflow
+
+The script failed due to call depth overflow.
+At C:\Products\Repos\fix-inheritance\src\pwsh51\Fix-Inheritance.ps1:57 char:13
++             & $pwsh51Script @PSBoundParameters
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (0:Int32) [], RuntimeException
+    + FullyQualifiedErrorId : CallDepthOverflow
+
+The script failed due to call depth overflow.
+At C:\Products\Repos\fix-inheritance\src\pwsh51\Fix-Inheritance.ps1:57 char:13
++             & $pwsh51Script @PSBoundParameters
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (0:Int32) [], RuntimeException
+    + FullyQualifiedErrorId : CallDepthOverflow
+
+The script failed due to call depth overflow.
+At C:\Products\Repos\fix-inheritance\src\pwsh51\Fix-Inheritance.ps1:57 char:13
++             & $pwsh51Script @PSBoundParameters
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (0:Int32) [], RuntimeException
+    + FullyQualifiedErrorId : CallDepthOverflow
+
+The script failed due to call depth overflow.
+At C:\Products\Repos\fix-inheritance\src\pwsh51\Fix-Inheritance.ps1:57 char:13
++             & $pwsh51Script @PSBoundParameters
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (0:Int32) [], RuntimeException
+    + FullyQualifiedErrorId : CallDepthOverflow
+
+The script failed due to call depth overflow.
+At C:\Products\Repos\fix-inheritance\src\pwsh51\Fix-Inheritance.ps1:57 char:13
++             & $pwsh51Script @PSBoundParameters
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (0:Int32) [], RuntimeException
+    + FullyQualifiedErrorId : CallDepthOverflow
+
+The script failed due to call depth overflow.
+At C:\Products\Repos\fix-inheritance\src\pwsh51\Fix-Inheritance.ps1:57 char:13
++             & $pwsh51Script @PSBoundParameters
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (0:Int32) [], RuntimeException
+    + FullyQualifiedErrorId : CallDepthOverflow
+
+The script failed due to call depth overflow.
+At C:\Products\Repos\fix-inheritance\src\pwsh51\Fix-Inheritance.ps1:57 char:13
++             & $pwsh51Script @PSBoundParameters
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (0:Int32) [], RuntimeException
+    + FullyQualifiedErrorId : CallDepthOverflow
+
+The script failed due to call depth overflow.
+At C:\Products\Repos\fix-inheritance\src\pwsh51\Fix-Inheritance.ps1:57 char:13
++             & $pwsh51Script @PSBoundParameters
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (0:Int32) [], RuntimeException
+    + FullyQualifiedErrorId : CallDepthOverflow
+
 ```powershell
 .\Tests\TestData\Setup-WindowsTestData.ps1
 ```
