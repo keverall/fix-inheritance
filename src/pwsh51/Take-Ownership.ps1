@@ -55,7 +55,7 @@ if ($ScriptRoot -and (Split-Path $ScriptRoot -Leaf) -eq 'pwsh51') {
     $ScriptRoot = Split-Path $ScriptRoot -Parent
 }
 
-. (Join-Path $PSScriptRoot '_Common.ps1')
+. (Join-Path $ScriptRoot '_Common.ps1')
 
 function Invoke-TakeOwnership {
     [CmdletBinding()]

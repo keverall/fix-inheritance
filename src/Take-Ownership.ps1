@@ -45,16 +45,20 @@ param(
     [string]$LogPath = $null
 )
 
+$currentScript = $MyInvocation.MyCommand.Path
 if ($PSVersionTable.PSVersion.Major -lt 7) {
-    $pwsh51Script = [System.IO.Path]::Combine($PSScriptRoot, "pwsh51", "Take-Ownership.ps1")
-    if (Test-Path $pwsh51Script) {
-        if ($MyInvocation.InvocationName -eq '.') {
-            . $pwsh51Script @PSBoundParameters
-        } else {
-            & $pwsh51Script @PSBoundParameters
-            exit $LASTEXITCODE
+    # Prevent infinite recursion if this script is already the pwsh51 version
+    if ($currentScript -and $currentScript -notmatch '[\\/]pwsh51[\\/]Take-Ownership\.ps1$') {
+        $pwsh51Script = [System.IO.Path]::Combine($PSScriptRoot, "pwsh51", "Take-Ownership.ps1")
+        if (Test-Path $pwsh51Script) {
+            if ($MyInvocation.InvocationName -eq '.') {
+                . $pwsh51Script @PSBoundParameters
+            } else {
+                & $pwsh51Script @PSBoundParameters
+                exit $LASTEXITCODE
+            }
+            return
         }
-        return
     }
 }
 
@@ -79,7 +83,7 @@ if (-not (Get-Variable -Name "FixInheritanceBannerShown" -ErrorAction SilentlyCo
     Set-Variable -Name "FixInheritanceBannerShown" -Value $true -Scope Script
 }
 
-. (Join-Path $PSScriptRoot '_Common.ps1')
+. (Join-Path $ScriptRoot '_Common.ps1')
 
 function Invoke-TakeOwnership {
     [CmdletBinding()]

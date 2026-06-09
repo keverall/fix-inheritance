@@ -48,16 +48,20 @@ if ($ScriptRoot -and (Split-Path $ScriptRoot -Leaf) -eq 'pwsh51') {
 }
 
 # PS7+ detection (PSEdition is the most reliable signal)
+$currentScript = $MyInvocation.MyCommand.Path
 if ($PSVersionTable.PSEdition -ne 'Core' -and $PSVersionTable.PSVersion.Major -lt 6) {
-    $pwsh51Script = [System.IO.Path]::Combine($ScriptRoot, "pwsh51", "Fix-Inheritance.ps1")
-    if (Test-Path -LiteralPath $pwsh51Script) {
-        if ($MyInvocation.InvocationName -eq '.') {
-            . $pwsh51Script @PSBoundParameters
-        } else {
-            & $pwsh51Script @PSBoundParameters
-            exit $LASTEXITCODE
+    # Prevent infinite recursion if this script is already the pwsh51 version
+    if ($currentScript -and $currentScript -notmatch '[\\/]pwsh51[\\/]Fix-Inheritance\.ps1$') {
+        $pwsh51Script = [System.IO.Path]::Combine($ScriptRoot, "pwsh51", "Fix-Inheritance.ps1")
+        if (Test-Path -LiteralPath $pwsh51Script) {
+            if ($MyInvocation.InvocationName -eq '.') {
+                . $pwsh51Script @PSBoundParameters
+            } else {
+                & $pwsh51Script @PSBoundParameters
+                exit $LASTEXITCODE
+            }
+            return
         }
-        return
     }
 }
 
