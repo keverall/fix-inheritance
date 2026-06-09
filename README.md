@@ -44,6 +44,26 @@ The scripts automatically detect the PowerShell version. If run on Windows Power
 
 ## Quick Start
 
+### Running Scripts in Locked-Down Environments
+
+If you get "script cannot be loaded" errors due to execution policy, use:
+
+```powershell
+# Recommended - bypass for this invocation only
+powershell -ExecutionPolicy Bypass -File .\src\Fix-Inheritance.ps1 -TargetPath "R:\data"
+
+# Or from an elevated PowerShell prompt
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+.\src\Fix-Inheritance.ps1 -TargetPath "R:\data"
+
+# Then run, from project root folder
+
+Get-Children .\src\*.ps1 |Unblock-File 
+
+```
+
+This only affects the current process/session and doesn't require permanent policy changes.
+
 ### Step 1: Fix inheritance and generate report
 
 ```powershell
@@ -163,21 +183,6 @@ Each run creates a log file:
 - Read access to target fileshare
 - `icacls.exe` and `takeown.exe` (built into Windows)
 - For cross-platform testing: Scripts run on Linux/PowerShell 7 but will skip Windows-specific operations gracefully.
-
-### Running Scripts in Locked-Down Environments
-
-If you get "script cannot be loaded" errors due to execution policy, use:
-
-```powershell
-# Recommended - bypass for this invocation only
-powershell -ExecutionPolicy Bypass -File .\src\Fix-Inheritance.ps1 -TargetPath "R:\data"
-
-# Or from an elevated PowerShell prompt
-Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
-.\src\Fix-Inheritance.ps1 -TargetPath "R:\data"
-```
-
-This only affects the current process/session and doesn't require permanent policy changes.
 
 ## Test Suite
 
